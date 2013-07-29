@@ -153,7 +153,17 @@ public:
     /**
      * \brief Fits the degree distribution of the specified graph to a power law distribution
      */
-    void powerlaw(Graph *g, int &xmin, double &alpha, double &KS, double start = 1.5, double inc = 0.01, double end = 3.5);
+    void powerlaw_fit(Graph *g, int &xmin, double &alpha, double &KS, double start = 1.5, double inc = 0.001, double end = 3.5);
+
+    /**
+     * \brief Fits the degree distribution of the specified graph to a Poisson distribution
+     */
+    void poisson_fit(Graph *g, int &xmin, double &lambda, double &KS );
+
+    /**
+     * \brief Fits the degree distribution of the specified graph to a binomial distribution
+     */
+    void binomial_fit(Graph *g, int &xmin, double &prob, double &KS );
     #endif
 
     /**

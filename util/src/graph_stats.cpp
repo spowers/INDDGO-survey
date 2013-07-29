@@ -45,7 +45,7 @@ void print_time(string prefix, ORB_t start, ORB_t end){
     cout << prefix + ": " << ORB_seconds(end, start) << endl;
 }
 
-const string allowed_methods ("edge_density,avg_degree,degree_dist,global_cc,avg_cc,local_ccs,shortest_paths,assortativity,eccentricity,eccentricity_dist,expansion,avg_shortest_path,shortest_paths_boost,eigen_spectrum,k_cores,degeneracy,betweenness,powerlaw,delta_hyperbolicity");
+const string allowed_methods ("edge_density,avg_degree,degree_dist,global_cc,avg_cc,local_ccs,shortest_paths,assortativity,eccentricity,eccentricity_dist,expansion,avg_shortest_path,shortest_paths_boost,eigen_spectrum,k_cores,degeneracy,betweenness,powerlaw_fit,poisson_fit,binomial_fit,delta_hyperbolicity");
 
 /**
  * Creates a map from a comma-separated string
@@ -166,7 +166,7 @@ int main(int argc, char **argv){
     vector<int> k_cores;
     double avg_path_length;
     int xmin;
-    double alpha, KS, max_delta;
+    double prob, lambda, alpha, KS, max_delta;
     vector<vector<double> > delta;
     vector<double> betweenness;
 
@@ -350,7 +350,8 @@ int main(int argc, char **argv){
     }
     #endif // ifdef HAS_PETSC
 
-    if(req_methods["powerlaw"] == true){
+    #ifdef HAS_BOOST
+    if(req_methods["powerlaw_fit"] == true){
         cout << "Calculating power law parameters" << endl;
         ORB_read(t1);
         gp.powerlaw(&g, xmin, alpha, KS);
@@ -359,6 +360,28 @@ int main(int argc, char **argv){
         print_time("Time(powerlaw)", t1, t2);
         outfile << "powerlaw " << xmin << " " << alpha << " " << KS << endl;
     }
+    if(req_methods["poisson_fit"] == true){
+        cout << "Calculating Poisson distribution parameters" << endl;
+        ORB_read(t1);
+        gp.powerlaw(&g, xmin, lambda, KS);
+        ORB_read(t2);
+
+        print_time("Time(poisson_fit)", t1, t2);
+        outfile << "poisson_fit " << xmin << " " << lambda << " " << KS << endl;
+    }
+    if(req_methods["binomial_fit"] == true){
+        cout << "Calculating binomial distribution parameters" << endl;
+        ORB_read(t1);
+        gp.powerlaw(&g, xmin, prob, KS);
+        ORB_read(t2);
+
+        print_time("Time(binomial_fit)", t1, t2);
+        outfile << "binomial_fit " << xmin << " " << prob << " " << KS << endl;
+    }
+    #else // ifdef HAS_BOOST
+    cerr << "Error: BOOST support was not compiled, cannot run power law fitting, binomial fitting, or Poisson fitting" << endl;
+    #endif // ifdef HAS_BOOST
+
     if(req_methods["delta_hyperbolicity"] == true){
         cout << "Calculating delta hyperbolicity" << endl;
         ORB_read(t1);
