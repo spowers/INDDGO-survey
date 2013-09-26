@@ -45,7 +45,7 @@ void print_time(string prefix, ORB_t start, ORB_t end){
     cout << prefix + ": " << ORB_seconds(end, start) << endl;
 }
 
-const string allowed_methods ("edge_density,avg_degree,degree_dist,global_cc,avg_cc,local_ccs,shortest_paths,assortativity,eccentricity,eccentricity_dist,expansion,avg_shortest_path,shortest_paths_boost,eigen_spectrum,k_cores,degeneracy,betweenness,powerlaw_fit,poisson_fit,binomial_fit,delta_hyperbolicity");
+const string allowed_methods ("edge_density,avg_degree,degree_dist,global_cc,avg_cc,local_ccs,shortest_paths,assortativity,eccentricity,eccentricity_dist,expansion,avg_shortest_path,shortest_paths_boost,eigen_spectrum,k_cores,degeneracy,betweenness,dpowerlaw_fit,cpowerlaw_fit,poisson_fit,binomial_fit,delta_hyperbolicity");
 
 /**
  * Creates a map from a comma-separated string
@@ -101,9 +101,9 @@ int parse_options(int argc, char **argv, string& infile, string& intype, string&
         case 's':
             *spectrum_spread = atoi(optarg);
             break;
-	case 'a':
+        case 'a':
             *file_append = 1;
-	    break;
+            break;
         }
     }
 
@@ -135,10 +135,11 @@ int main(int argc, char **argv){
     cout << "Input  type: " << intype << endl;
     cout << "Output file: " << outfilename << endl;
     cout << "Appending  : ";
-    if(file_append == 0) {
-      cout << "false" << endl;
-    } else {
-      cout << "true" << endl;
+    if(file_append == 0){
+        cout << "false" << endl;
+    }
+    else {
+        cout << "true" << endl;
     }
     cout << "Methods    :";
     for(map<string, bool>::iterator it = req_methods.begin(); it != req_methods.end(); ++it){
@@ -181,10 +182,11 @@ int main(int argc, char **argv){
 
     vector< vector<int> > shortest_path_distances;
 
-    if(file_append == 0) {
-      outfile.open(outfilename.c_str());
-    } else {
-      outfile.open(outfilename.c_str(), ios_base::out|ios_base::app);
+    if(file_append == 0){
+        outfile.open(outfilename.c_str());
+    }
+    else {
+        outfile.open(outfilename.c_str(), ios_base::out | ios_base::app);
     }
     if(!outfile.is_open()){
         cerr << "Error opening " << outfilename << " for writing, exiting" << endl;
@@ -199,10 +201,10 @@ int main(int argc, char **argv){
     ORB_read(t2);
     print_time("Time(make_simple)", t1, t2);
 
-    if(outfile.tellp() == 0) {
-      outfile << "filename" << infile << endl;
-      outfile << "num_nodes " << g.get_num_nodes() << endl;
-      outfile << "num_edges " << g.get_num_edges() << endl;
+    if(outfile.tellp() == 0){
+        outfile << "filename" << infile << endl;
+        outfile << "num_nodes " << g.get_num_nodes() << endl;
+        outfile << "num_edges " << g.get_num_edges() << endl;
     }
 
     if(req_methods["edge_density"] == true){
@@ -366,19 +368,28 @@ int main(int argc, char **argv){
     #endif // ifdef HAS_PETSC
 
     #ifdef HAS_BOOST
-    if(req_methods["powerlaw_fit"] == true){
-        cout << "Calculating power law parameters" << endl;
+    if(req_methods["dpowerlaw_fit"] == true){
+        cout << "Calculating discrete power law parameters" << endl;
         ORB_read(t1);
-        gp.powerlaw(&g, xmin, alpha, KS);
+        gp.dpowerlaw_fit(&g, xmin, alpha, KS);
         ORB_read(t2);
 
-        print_time("Time(powerlaw)", t1, t2);
-        outfile << "powerlaw " << xmin << " " << alpha << " " << KS << endl;
+        print_time("Time(dpowerlaw_fit)", t1, t2);
+        outfile << "dpowerlaw_fit " << xmin << " " << alpha << " " << KS << endl;
+    }
+    if(req_methods["cpowerlaw_fit"] == true){
+        cout << "Calculating continuous power law parameters" << endl;
+        ORB_read(t1);
+        gp.cpowerlaw_fit(&g, xmin, alpha, KS);
+        ORB_read(t2);
+
+        print_time("Time(cpowerlaw_fit)", t1, t2);
+        outfile << "cpowerlaw_fit " << xmin << " " << alpha << " " << KS << endl;
     }
     if(req_methods["poisson_fit"] == true){
         cout << "Calculating Poisson distribution parameters" << endl;
         ORB_read(t1);
-        gp.powerlaw(&g, xmin, lambda, KS);
+        gp.poisson_fit(&g, xmin, lambda, KS);
         ORB_read(t2);
 
         print_time("Time(poisson_fit)", t1, t2);
@@ -387,7 +398,7 @@ int main(int argc, char **argv){
     if(req_methods["binomial_fit"] == true){
         cout << "Calculating binomial distribution parameters" << endl;
         ORB_read(t1);
-        gp.powerlaw(&g, xmin, prob, KS);
+        gp.binomial_fit(&g, xmin, prob, KS);
         ORB_read(t2);
 
         print_time("Time(binomial_fit)", t1, t2);

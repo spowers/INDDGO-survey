@@ -151,9 +151,14 @@ public:
 
     #ifdef HAS_BOOST
     /**
-     * \brief Fits the degree distribution of the specified graph to a power law distribution
+     * \brief Fits the degree distribution of the specified graph to a discrete power law distribution
      */
-    void powerlaw_fit(Graph *g, int &xmin, double &alpha, double &KS, double start = 1.5, double inc = 0.001, double end = 3.5);
+    void dpowerlaw_fit(Graph *g, int &xmin, double &alpha, double &KS, double start = 1.5, double inc = 0.001, double end = 3.5);
+
+    /**
+     * \brief Fits the degree distribution of the specified graph to a continuous power law distribution
+     */
+    void cpowerlaw_fit(Graph *g, int &xmin, double &alpha, double &KS );
 
     /**
      * \brief Fits the degree distribution of the specified graph to a Poisson distribution

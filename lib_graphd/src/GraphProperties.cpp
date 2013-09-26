@@ -1009,7 +1009,7 @@ namespace Graph {
 
     #ifdef HAS_BOOST
     /**
-     * Fits the degree distribution of g to a power law distribution
+     * Fits the degree distribution of g to a discrete power law distribution
      * \param[in] g Pointer to a graph
      * \param[out] xmin Integer value holding the degree at which the data begins behaving like a power law
      * \param[out] alpha Double holding the most likely value for the exponent
@@ -1018,7 +1018,7 @@ namespace Graph {
      * \param[in] inc Determines granularity of the exponent search range, defaults to 0.01
      * \param[in] end Upper bound for exponent, defaults to 3.5
      */
-    void GraphProperties::powerlaw_fit(Graph *g, int &xmin, double &alpha, double &KS, double start, double inc, double end){
+    void GraphProperties::dpowerlaw_fit(Graph *g, int &xmin, double &alpha, double &KS, double start, double inc, double end){
         int xm, i, k, n, I;
         int prev, pprev;
         int size = 1 + (int)(end - start) / inc;
@@ -1128,7 +1128,79 @@ namespace Graph {
 
             prev = x[xm];
         }
-    } // powerlaw_fit
+    } // dpowerlaw_fit
+
+    /**
+     * Fits the degree distribution of g to a continuous power law distribution
+     * \param[in] g Pointer to a graph
+     * \param[out] xmin Integer value holding the degree at which the data begins following a Poisson distribution
+     * \param[out] alpha Double holding the most likely value for the defining parameter
+     * \param[out] KS Double holding the Kolmogorov-Smirnov statistic
+     */
+    void GraphProperties::cpowerlaw_fit(Graph *g, int &xmin, double &alpha, double &KS ){
+        int xm, i, k, m;
+        int prev, pprev; //xmin
+        double sum, MLE;
+        double f, fn, D, tD; //KS;
+
+        vector<int> x(g->degree);
+
+        sort(x.begin(), x.end());
+
+        KS = -1;
+        prev = 0;
+        for( xm = 0; xm < x.size(); xm++ ){
+            if(x[xm] == prev){
+                continue;
+            }
+
+            m = x.size() - xm;
+
+            sum = 0;
+            for(i = xm; i < x.size(); i++){
+                sum += log(double(x[i]) / x[xm]);
+            }
+            MLE = 1.0 + m / sum;
+
+            pprev = 0;
+            fn = f = 0;
+            D = 0;
+            for(i = xm; i < x.size(); i++){
+                if(x[i] == pprev){
+                    continue;
+                }
+
+                //CDF (f) and EDF (fn)
+                for(k = i; k < x.size() && x[k] <= x[i]; k++){
+                    fn += (1.0) / m;
+                }
+                //CDF = 1 - (xmin/x)^{\alpha - 1}
+                f = 1.0 - pow(x[xm] / double(x[i]), MLE - 1.0);
+
+                tD = abs(fn - f);
+                if(tD > D){
+                    D = tD;
+                }
+
+                pprev = x[i];
+            }
+
+            if(KS > -1){
+                if(D < KS){
+                    KS = D;
+                    xmin = x[xm];
+                    alpha = MLE;
+                }
+            }
+            else {
+                KS = D;
+                xmin = x[xm];
+                alpha = MLE;
+            }
+
+            prev = x[xm];
+        }
+    } // cpowerlaw_fit
 
     /**
      * Fits the degree distribution of g to a Poisson distribution
@@ -1174,8 +1246,8 @@ namespace Graph {
                 for(k = i; k < x.size() && x[k] <= x[i]; k++){
                     fn += (1.0) / m;
                 }
-                //\lambda^x[k] * e^{-\lambda}/x[k]!
-                f += (pow(MLE, x[k]) * exp(-MLE)) / boost::math::factorial<double>(x[k]);
+                //\lambda^x[i] * e^{-\lambda}/x[i]!
+                f += (pow(MLE, x[i]) * exp(-MLE)) / boost::math::factorial<double>(x[i]);
 
                 tD = abs(fn - f);
                 if(tD > D){
@@ -1246,8 +1318,8 @@ namespace Graph {
                 for(k = i; k < x.size() && x[k] <= x[i]; k++){
                     fn += (1.0) / m;
                 }
-                //{n-1 \choose x[k]}p^x[k](1-p)^{n-1-x[k]}
-                f += boost::math::binomial_coefficient<double>(nodes - 1, x[k]) * pow(MLE, x[k]) * pow(1 - MLE, nodes - 1 - x[k]);
+                //{n-1 \choose x[i]}p^x[i](1-p)^{n-1-x[i]}
+                f += boost::math::binomial_coefficient<double>(nodes - 1, x[i]) * pow(MLE, x[i]) * pow(1 - MLE, nodes - 1 - x[i]);
 
                 tD = abs(fn - f);
                 if(tD > D){
