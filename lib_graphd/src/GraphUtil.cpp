@@ -871,7 +871,8 @@ namespace Graph {
 
         vector<int> deg_lookup(n);
         int max_deg = 0;
-        for(int i = 0; i < deg_lookup.size(); i++){
+        int deg_size = deg_lookup.size();
+        for(int i = 0; i < deg_size; i++){
             deg_lookup[i] = g->degree[i];
             if(deg_lookup[i] > max_deg){
                 max_deg = deg_lookup[i];
@@ -879,7 +880,10 @@ namespace Graph {
         }
         vector<vector<int> > D;
         D.resize(max_deg + 1);
-        int depth[n];
+
+        int *depth;
+        depth = new int[n];
+        //int depth[n];
         //can also create an L output list for coloring number optimal ordering
 
         for(int i = 0; i < n; i++){
@@ -916,8 +920,46 @@ namespace Graph {
                 }
             }
         }
+        delete [] depth;
         return k;
     } // find_degen
+
+    /**
+     * \input g input graph
+     * \output new graph consisting of largest component, or NULL if the input graph is connected
+     * NOTE: this function *will* canonicalize your graph!!!
+     **/
+    Graph *GraphUtil::get_largest_component_graph(Graph *g){
+        GraphProperties properties;
+        GraphCreatorFile creator;
+        Graph *largecomp;
+        list<int> *maxlist = NULL;
+        size_t maxlen = 0;
+
+        if(!properties.is_connected(g)){
+            properties.make_canonical(g);
+            vector<list<int> *> members;
+            vector<list<int> *>::iterator vlit;
+            find_all_components(g, &members);
+            // traverse the list and find the one with the most members
+            for(vlit = members.begin(); vlit != members.end(); ++vlit){
+                //cout << "Got list with size: " << ((*vlit)->size()) << endl;
+                if(((*vlit)->size()) >= maxlen){
+                    maxlen = (*vlit)->size();
+                    //cout << "New list with maxlen > " << maxlen << endl;
+                    maxlist = *vlit;
+                    //cout << maxlist << endl;
+                }
+            }
+
+            // found the max component, let's create the graph
+            largecomp = creator.create_component((Graph *)g, maxlist, true);
+            return largecomp;
+        }
+        else {
+            return NULL;
+        }
+    } // get_largest_component_graph
 }
 using namespace std;
 /**

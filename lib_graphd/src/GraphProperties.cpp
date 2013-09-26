@@ -22,7 +22,9 @@
 #include "GraphDecomposition.h"
 #include "Log.h"
 #include <sys/types.h>
-#include <sched.h>
+#if !WIN32
+  #include <sched.h>
+#endif
 
 #include <algorithm>
 #include <vector>
@@ -378,10 +380,8 @@ namespace Graph {
      * \param[out] t output vector of per-vertex triangle counts
      */
     void GraphProperties::all_triangles_compact_forward(Graph *g, vector<long int> &t){
-        int i, j;
+        int i;
         int u, v;
-        int retcode;
-        Node *vn;
 
         std::list<int>::const_reverse_iterator rit;
 
@@ -412,8 +412,6 @@ namespace Graph {
          */
 
         Node *nv, *nu;
-        int vp, up;
-        int iu, iv;
         int fakev;
         int uprime, vprime;
         const int n = g->get_num_nodes();
@@ -498,8 +496,9 @@ namespace Graph {
                     } //if revmap
                 } //for vtxs
             } //for fakev
+            int tsize = (int)t.size();
             #pragma omp for
-            for(i = 0; i < t.size(); i++){
+            for(i = 0; i < tsize; i++){
                 for(int j = 0; j < omp_get_num_threads(); j++){
                     t[i] += local_t[j][i];
                 }
@@ -513,7 +512,7 @@ namespace Graph {
      * \param[out] t vector of long ints, length |V|, returns 3x number of triangles for each vertex
      */
     void GraphProperties::all_triangles_edge_listing(Graph *g, vector<long int> &t){
-        int i, j, u, v;
+        int i, u, v;
         vector<int>::iterator it;
         list<int>::const_iterator cit;
         list<int>::iterator lt;
@@ -637,7 +636,7 @@ namespace Graph {
         dists.resize(g->get_num_nodes());
         //std::vector<int> d(boost::num_vertices(*bg));
         vertex_descriptor s = vertex(source, *bg);
-        boost::dijkstra_shortest_paths(*bg, s, boost::predecessor_map(&preds[0]).distance_map(&dists[0]));
+        boost::dijkstra_shortest_paths(*bg, s, boost::predecessor_map(&preds[0]).distance_map(&dists[0]).distance_inf(INDDGO_INFINITY));
         int i;
         //for(i=0;i<preds.size();i++){
         //    cout << "node " << i << " pred " << preds[i] << "\n";
@@ -674,7 +673,7 @@ namespace Graph {
             }
         }
         //store the results
-        g->set_shortest_path_dist(pAll);
+        g->set_shortest_path_dist(&pAll);
     } // paths_dijkstra_boost_all
 
     /**
@@ -786,7 +785,7 @@ namespace Graph {
         } //end loop over vertices
 
         //store the results
-        g->set_shortest_path_dist(pAll);
+        g->set_shortest_path_dist(&pAll);
 
         //print out results
         //for(int i = 0; i < n; i++){
@@ -805,7 +804,7 @@ namespace Graph {
      */
     void GraphProperties::eccentricity(Graph *g, vector<int> &ecc){
         const int n = g->get_num_nodes();
-        vector< vector<int> > short_paths = g->get_shortest_path_dist_ref();   //computes if not already
+        const vector< vector<int> > &short_paths = g->get_shortest_path_dist_ref();   //computes if not already
         int bestMax = 0;
         ecc.resize(n);
 
@@ -841,13 +840,16 @@ namespace Graph {
         freq_ecc.resize(*(std::max_element(ecc.begin(), ecc.end())) + 1);
 
         //compute diameter of each vertex
-        for(int i = 0; i < ecc.size(); i++){
+        int eccsize = ecc.size();
+        // This could be slow with resizing
+        for(int i = 0; i < eccsize; i++){
             freq_ecc[ecc[i]]++; //add to tally for this diameter size
         }
         //printf("Graph diameter is %d\n", freq_ecc.size()-1);
 
-        #pragma omp parallel for default(none) shared(freq_ecc)
-        for(int i = 0; i <= freq_ecc.size() - 1; i++){
+        int freq_ecc_size = freq_ecc.size();
+        #pragma omp parallel for default(none) shared(freq_ecc, freq_ecc_size)
+        for(int i = 0; i <= freq_ecc_size - 1; i++){
             freq_ecc[i] = freq_ecc[i] / n;
             //printf("i=%d and n=%d with freq eccentricity %f\n",i,n,freq_ecc[i]);
         }
@@ -861,14 +863,18 @@ namespace Graph {
      */
     void GraphProperties::expansion(Graph *g, vector<double> &norm_hops){
         const int n = g->get_num_nodes();
-        vector< vector<int> > short_paths = g->get_shortest_path_dist_ref();   //computes if not already
+        const vector< vector<int> > &short_paths = g->get_shortest_path_dist_ref();   //computes if not already
         vector <int> hops(n,0);  //largest possible dist is n-1
         norm_hops.resize(n);
+        int k;
 
         //for each vertex, find the number of vertices reachable for all hops; add to tally
         for(int i = 0; i < n; i++){
             for(int j = 0; j < n; j++){
-                hops[ short_paths[i][j] ]++;
+                k = short_paths[i][j];
+                if(k != INDDGO_INFINITY){
+                    hops[k]++;
+                }
             }
         }
 
@@ -877,7 +883,7 @@ namespace Graph {
 
         #pragma omp parallel for default(none) shared(norm_hops, hops)
         for(int h = 1; h < n; h++){
-            norm_hops[h] = (double)hops[h] / (n * (n - 1));
+            norm_hops[h] = (double)hops[h] / ((double)n * (n - 1));
             //printf("h = %d and number is %d; norm value is %f\n",h,hops[h],norm_hops[h]);
         }
     } //expansion
@@ -889,7 +895,7 @@ namespace Graph {
      */
     void GraphProperties::diameter(Graph *g, int &diam){
         int i, j, size, temp;
-        vector< vector<int> > dist_mat = g->get_shortest_path_dist_ref();   //computes if not already
+        const vector< vector<int> > &dist_mat = g->get_shortest_path_dist_ref();   //computes if not already
 
         size = dist_mat.size();
         diam = dist_mat[0][0];
@@ -914,7 +920,7 @@ namespace Graph {
         int i, j, d, size, temp, diam = 0;
         int n0, numer, tot_con_pairs = 0;
         float gd;
-        vector< vector<int> > dist_mat = g->get_shortest_path_dist_ref();   //computes if not already
+        const vector< vector<int> > &dist_mat = g->get_shortest_path_dist_ref();   //computes if not already
         vector<int> bins (g->num_nodes, 0);
 
         size = dist_mat.size();
@@ -970,22 +976,35 @@ namespace Graph {
     }
 
     void GraphProperties::avg_path_length(Graph *g, double &pl){
-        const int n = g->get_num_nodes();
-        const vector< vector<int> > short_paths = g->get_shortest_path_dist_ref();
+        const uint64_t n = g->get_num_nodes();
+        const vector< vector<int> > &short_paths = g->get_shortest_path_dist_ref();
         double sum = 0;
-        double intermediate = 0.0;
+        uint64_t intermediate = 0;
         int i, j;
+        int inf_path = 0;
 
-        #pragma omp parallel for schedule(dynamic, 16) default(none) private(j) reduction(+:sum)
+        #pragma omp parallel for default(none) reduction(+:inf_path) private(j) shared(short_paths)
         for(i = 0; i < n; i++){
             for(j = 0; j < n; j++){
-                if(INDDGO_INFINITY != short_paths[i][j]){
-                    sum += short_paths[i][j];
+                if(INDDGO_INFINITY == short_paths[i][j]){
+                    inf_path++;
                 }
             }
         }
 
-        sum = sum /  (double)(n * (n - 1));
+        #pragma omp parallel for default(none) private(j, intermediate) reduction(+:sum) shared(short_paths, inf_path, std::cout)
+        for(i = 0; i < n; i++){
+            intermediate = 0;
+            for(j = 0; j < n; j++){
+                if(INDDGO_INFINITY != short_paths[i][j]){
+                    intermediate += short_paths[i][j];
+                }
+            }
+            sum += (double)(intermediate / (double)((n * (n - 1)) - inf_path));
+            //cout << "For node " << i << " got sum " << sum << endl;
+            //sum = sum /  (double)((n * (n - 1)) - inf_path);
+        }
+        cout << "Got a SUM: " << sum << endl;
         pl = sum;
     } // avg_path_length
 
@@ -1359,7 +1378,6 @@ namespace Graph {
         const vector<int> &degrees = g->get_degree_ref();
         int i;
         double di, dc;
-        int nbr;
         std::list<int>::const_iterator cit;
         Node *node;
 
@@ -1393,7 +1411,7 @@ namespace Graph {
      * \param[out] delta Vector of vectors of doubles holding the delta hyperbolicity distribution
      */
     void GraphProperties::delta_hyperbolicity(Graph *g, double &max_delta, vector<vector<double> > &delta){
-        vector< vector<int> > dist_mat = g->get_shortest_path_dist_ref();
+        const vector< vector<int> > &dist_mat = g->get_shortest_path_dist_ref();
         int size = dist_mat.size();
         int mat_size = dist_mat.size();
         int counter = 0;

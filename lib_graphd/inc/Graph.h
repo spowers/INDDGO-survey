@@ -19,50 +19,61 @@
 
  */
 
-#ifndef GRAPH_H_
-#define GRAPH_H_
-
-#ifdef _OPENMP
-  #include <omp.h>
-#else
-  #ifndef HAS_METIS
-    #define omp_get_num_threads() 1
-    #define omp_get_thread_num() 0
-    #define omp_get_max_threads() 1
+/*This fixes any issues with MSVC always having HAS_METIS defined*/
+#ifdef _MSC_VER
+  #if !HAS_METIS
+    #undef HAS_METIS
   #endif
 #endif
 
-#ifdef HAS_PETSC
-  #include <petscksp.h>
-#endif
+#ifndef GRAPH_H_
+  #define GRAPH_H_
 
-#include "GraphInterface.h"
-#include "Node.h"
-#include "GraphException.h"
-#include "Log.h"
-#include <string>
+  #ifdef _OPENMP
+    #include <omp.h>
+  #else
+    #ifndef HAS_METIS
+      #define omp_get_num_threads() 1
+      #define omp_get_thread_num() 0
+      #define omp_get_max_threads() 1
+    #endif
+  #endif
 
-#ifdef HAS_BOOST
-  #include <iostream>
-  #include <deque>
-  #include <iterator>
+  #ifdef HAS_PETSC
+    #include <petscksp.h>
+  #endif
 
-  #include "boost/graph/adjacency_list.hpp"
-  #include "boost/graph/topological_sort.hpp"
-  #include <boost/graph/dijkstra_shortest_paths.hpp>
-#endif
+  #if WIN32
+    #define strncasecmp strncmp
+  #endif
+
+  #include "GraphInterface.h"
+  #include "Node.h"
+  #include "GraphException.h"
+  #include "Log.h"
+  #include <string>
+
+  #ifdef HAS_BOOST
+    #include <iostream>
+    #include <deque>
+    #include <iterator>
+
+    #include "boost/graph/adjacency_list.hpp"
+    #include "boost/graph/topological_sort.hpp"
+    #include <boost/graph/dijkstra_shortest_paths.hpp>
+  #endif
 
 using namespace std;
 
-#define INDDGO_INFINITY INT_MAX - 16
+  #define INDDGO_INFINITY INT_MAX - 16
 
-#ifdef HAS_BOOST
+  #ifdef HAS_BOOST
 typedef boost::property<boost::edge_weight_t, int> EdgeWeightProperty;
 typedef boost::property <boost::vertex_centrality_t, double > CentralityMap;
 typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS, CentralityMap, EdgeWeightProperty> BoostUndirected;
 typedef boost::graph_traits < BoostUndirected >::vertex_descriptor vertex_descriptor;
 typedef boost::graph_traits < BoostUndirected >::edge_descriptor edge_descriptor;
-#endif //HAS_BOOST
+  #endif //HAS_BOOST
 
 namespace Graph {
     class Graph : public GraphInterface
@@ -85,7 +96,7 @@ protected:
     vector<int> xadj;
     vector<int> adjncy;
     vector<int> adj_vec;
-    vector< vector<int> > apsp_dist;
+    vector< vector<int> > *apsp_dist;
 
     // Currently this is only calculated if you have Boost.
     vector<double> betweenness;
@@ -121,7 +132,7 @@ public:
     /** \brief Try to pre-allocate memory for node and degree vectors **/
     void resize(int n);
     /** \brief set shortest path distances **/
-    void set_shortest_path_dist(vector< vector<int> > apsp_dist);
+    void set_shortest_path_dist(vector< vector<int> > *apsp_dist);
     /** \brief set betweenness centrality vector **/
     void set_betweenness(vector<double> bc);
 
@@ -141,6 +152,7 @@ public:
     int get_num_edges() const;
     int get_num_edges_in_subgraph(list<int> *vertices);
     int get_num_nodes() const;
+    int get_num_connected_components() const;
     vector<int> get_xadj() const;
 
     /** \brief get a const ref to the betweenness vector **/
