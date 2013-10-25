@@ -177,22 +177,6 @@ void run_all_methods(Graph::Graph *g, ofstream &outfile, ofstream &timing_file, 
         write_degree_distribution(of, deg_dist);
         outfile << "degree_distribution " <<  of << endl;
     }
-    if(req_methods["diameter"] == true){
-        cout << "Calculating diameter" << endl;
-        ORB_read(t1);
-        gp.diameter(g, diam);
-        ORB_read(t2);
-        print_time(timing_file, "Time(diameter)", t1, t2);
-        outfile << "diameter " << diam << endl;
-    }
-    if(req_methods["effective_diameter"] == true){
-        cout << "Calculating effective diameter" << endl;
-        ORB_read(t1);
-        gp.effective_diameter(g, eff_diam);
-        ORB_read(t2);
-        print_time(timing_file, "Time(effective_diameter)", t1, t2);
-        outfile << "effective_diameter " << eff_diam << endl;
-    }
     if(req_methods["assortativity"] == true){
         cout << "Calculating degree assortativity" << endl;
         ORB_read(t1);
@@ -411,6 +395,22 @@ void run_all_methods(Graph::Graph *g, ofstream &outfile, ofstream &timing_file, 
     }
     else {
         cout << "Graph is disconnected - not calculating delta hyperbolicity" << endl;
+    }
+    if(req_methods["diameter"] == true){
+        cout << "Calculating diameter" << endl;
+        ORB_read(t1);
+        gp.diameter(g, diam);
+        ORB_read(t2);
+        print_time(timing_file, "Time(diameter)", t1, t2);
+        outfile << "diameter " << diam << endl;
+    }
+    if(req_methods["effective_diameter"] == true){
+        cout << "Calculating effective diameter" << endl;
+        ORB_read(t1);
+        gp.effective_diameter(g, eff_diam);
+        ORB_read(t2);
+        print_time(timing_file, "Time(effective_diameter)", t1, t2);
+        outfile << "effective_diameter " << eff_diam << endl;
     }
 
     outfile.close();
