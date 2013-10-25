@@ -521,7 +521,7 @@ int main(int argc, char **argv){
         delete(g);  // delete g here to save on memory
 
         if(outfile.tellp() == 0){
-            outfile << "filename " << infile << endl;
+            outfile << "largest_component_from " << infile << endl;
             outfile << "num_nodes " << largest_component->get_num_nodes() << endl;
             outfile << "num_edges " << largest_component->get_num_edges() << endl;
         }
