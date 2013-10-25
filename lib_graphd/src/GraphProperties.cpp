@@ -1424,45 +1424,16 @@ namespace Graph {
             delta.push_back(delta_vec);
             return;
         }
-
+        
         if(!is_connected(g)){
-            cerr << "Graph passed to calc_gromov has multiple components\n";
-
-            //Find the largest connected component
-            int temp = 0;
-            size = 0;
-            for(int i = 0; i < mat_size; i++){
-                temp = 0;
-                for(int j = 0; j < mat_size; j++){
-                    if(dist_mat[i][j] != INDDGO_INFINITY){
-                        temp++;
-                    }
-                }
-                //temp++; //count the vertex currently being tested
-                if(temp > size){
-                    size = temp;
-                    row = i;
-                }
-            }
+            cerr << "Graph passed to delta_hyperbolicity has multiple components, returning zero\n";
+            vector<double> delta_vec(1, 0);
+            delta.push_back(delta_vec);
+            return;
         }
 
-        //build vertex set of largest connected component and find its diameter
-        int temp_diam = 0;
-        vector<int> vert_vec(size);
-        for(int j = 0; j < mat_size; j++){
-            if(dist_mat[row][j] != INDDGO_INFINITY){
-                vert_vec[counter] = j;
-                counter++;
-                if(dist_mat[row][j] > temp_diam){
-                    temp_diam = dist_mat[row][j];
-                }
-            }
-            else if(j == row){
-                vert_vec[counter] = j;
-                counter++;
-            }
-        }
-        diam = temp_diam;
+        size = g->num_nodes;
+        diameter(g, diam);
 
         max_delta = 0;
 
@@ -1517,7 +1488,7 @@ namespace Graph {
         //OMP parallel region, this current implementation generates tasks at two of the four levels of the nested for loop,
         //    these tasks are then passed to threads which execute them and update their private copy of the results array
         //After the tasks have all been generated and executed the results are collated
-        #pragma omp parallel shared(delta, max_delta, shared_max_delta, diam, shared_delta, dist_mat, vert_vec, size)
+        #pragma omp parallel shared(delta, max_delta, shared_max_delta, diam, shared_delta, dist_mat, size)
         {
             double max_delta_loc = 0;
 
@@ -1553,9 +1524,9 @@ namespace Graph {
 
                 for(int i = 0; i < size; ++i){
                     #if defined (TASK_PROFILE) || defined (TASK_PROFILE_OVERHEAD)
-                    #pragma omp task shared(shared_delta, shared_max_delta, dist_mat, vert_vec, size, num_tasks1, num_tasks2, task_time)
+                    #pragma omp task shared(shared_delta, shared_max_delta, dist_mat, size, num_tasks1, num_tasks2, task_time)
                     #else
-                    #pragma omp task shared(shared_delta, shared_max_delta, dist_mat, vert_vec, size)
+                    #pragma omp task shared(shared_delta, shared_max_delta, dist_mat, size)
                     #endif
                     {
                         #ifdef TASK_PROFILE
@@ -1568,9 +1539,9 @@ namespace Graph {
 
                         for(int j = i + 1; j < size; ++j){
                             #if defined (TASK_PROFILE) || defined (TASK_PROFILE_OVERHEAD)
-                            #pragma omp task shared(shared_delta, shared_max_delta, dist_mat, vert_vec, size, num_tasks1, num_tasks2, task_time)
+                            #pragma omp task shared(shared_delta, shared_max_delta, dist_mat, size, num_tasks1, num_tasks2, task_time)
                             #else
-                            #pragma omp task shared(shared_delta, shared_max_delta, dist_mat, vert_vec, size)
+                            #pragma omp task shared(shared_delta, shared_max_delta, dist_mat, size)
                             #endif
                             {
                                 int thread_num = omp_get_thread_num();
@@ -1588,19 +1559,14 @@ namespace Graph {
 
                                 for(int k = j + 1; k < size; ++k){
                                     for(int l = k + 1; l < size; ++l){
-                                        const int ui = vert_vec[i];
+                                        const int uv = (dist_mat)[i][j];
 
-                                        const int vi = vert_vec[j];
-                                        const int uv = (dist_mat)[ui][vi];
+                                        const int ux = (dist_mat)[i][k];
+                                        const int vx = (dist_mat)[j][k];
 
-                                        const int xi = vert_vec[k];
-                                        const int ux = (dist_mat)[ui][xi];
-                                        const int vx = (dist_mat)[vi][xi];
-
-                                        const int yi = vert_vec[l];
-                                        const int uy = (dist_mat)[ui][yi];
-                                        const int vy = (dist_mat)[vi][yi];
-                                        const int xy = (dist_mat)[xi][yi];
+                                        const int uy = (dist_mat)[i][l];
+                                        const int vy = (dist_mat)[j][l];
+                                        const int xy = (dist_mat)[k][l];
 
                                         const int s1 = uv + xy;
                                         const int s2 = ux + vy;
@@ -1668,8 +1634,8 @@ namespace Graph {
                         }
 
                         #ifdef TASK_PROFILE_OVERHEAD
-                        //double tt2 = omp_get_wtime();
-                        //task_time[thread_id][0]+= (tt2 - tt1);
+                        double tt2 = omp_get_wtime();
+                        task_time[thread_id][0]+= (tt2 - tt1);
                         #endif
                         #ifdef TASK_PROFILE
                         int thread_id_end = omp_get_thread_num();

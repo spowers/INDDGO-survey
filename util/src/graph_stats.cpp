@@ -49,7 +49,7 @@ void print_time(ofstream &of, string prefix, ORB_t start, ORB_t end){
     }
 }
 
-const string allowed_methods ("edge_density,avg_degree,degree_dist,global_cc,avg_cc,local_ccs,shortest_paths,assortativity,eccentricity,eccentricity_dist,expansion,apsp_output,avg_shortest_path,shortest_paths_boost,eigen_spectrum,k_cores,degeneracy,betweenness,dpowerlaw_fit,cpowerlaw_fit,poisson_fit,binomial_fit,delta_hyperbolicity");
+const string allowed_methods ("edge_density,avg_degree,degree_dist,global_cc,avg_cc,local_ccs,shortest_paths,assortativity,eccentricity,eccentricity_dist,expansion,apsp_output,avg_shortest_path,shortest_paths_boost,eigen_spectrum,k_cores,degeneracy,betweenness,dpowerlaw_fit,cpowerlaw_fit,poisson_fit,binomial_fit,delta_hyperbolicity,diameter,effective_diameter");
 
 /**
  * Creates a map from a comma-separated string
@@ -129,9 +129,9 @@ void run_all_methods(Graph::Graph *g, ofstream &outfile, ofstream &timing_file, 
     double global_cc, avg_cc, assortativity;
 
     vector<double> local_cc, freq_ecc, norm_hops, eigen_spectrum;
-    float edge_density, avg_degree;
+    float edge_density, avg_degree, eff_diam;
     vector<int> deg_dist, ecc;
-    int degeneracy;
+    int degeneracy, diam;
     vector<int> k_cores;
     double avg_path_length;
     int xmin;
@@ -176,6 +176,22 @@ void run_all_methods(Graph::Graph *g, ofstream &outfile, ofstream &timing_file, 
         string of = outprefix + ".deg_dist";
         write_degree_distribution(of, deg_dist);
         outfile << "degree_distribution " <<  of << endl;
+    }
+    if(req_methods["diameter"] == true){
+        cout << "Calculating diameter" << endl;
+        ORB_read(t1);
+        gp.diameter(g, diam);
+        ORB_read(t2);
+        print_time(timing_file, "Time(diameter)", t1, t2);
+        outfile << "diameter " << diam << endl;
+    }
+    if(req_methods["effective_diameter"] == true){
+        cout << "Calculating effective diameter" << endl;
+        ORB_read(t1);
+        gp.effective_diameter(g, eff_diam);
+        ORB_read(t2);
+        print_time(timing_file, "Time(effective_diameter)", t1, t2);
+        outfile << "effective_diameter " << eff_diam << endl;
     }
     if(req_methods["assortativity"] == true){
         cout << "Calculating degree assortativity" << endl;
@@ -340,7 +356,7 @@ void run_all_methods(Graph::Graph *g, ofstream &outfile, ofstream &timing_file, 
         gp.dpowerlaw_fit(g, xmin, alpha, KS);
         ORB_read(t2);
 
-        print_time("Time(dpowerlaw_fit)", t1, t2);
+        print_time(timing_file, "Time(dpowerlaw_fit)", t1, t2);
         outfile << "dpowerlaw_fit " << xmin << " " << alpha << " " << KS << endl;
     }
     if(req_methods["cpowerlaw_fit"] == true){
@@ -349,7 +365,7 @@ void run_all_methods(Graph::Graph *g, ofstream &outfile, ofstream &timing_file, 
         gp.cpowerlaw_fit(g, xmin, alpha, KS);
         ORB_read(t2);
 
-        print_time("Time(cpowerlaw_fit)", t1, t2);
+        print_time(timing_file, "Time(cpowerlaw_fit)", t1, t2);
         outfile << "cpowerlaw_fit " << xmin << " " << alpha << " " << KS << endl;
     }
     if(req_methods["poisson_fit"] == true){
@@ -358,7 +374,7 @@ void run_all_methods(Graph::Graph *g, ofstream &outfile, ofstream &timing_file, 
         gp.poisson_fit(g, xmin, lambda, KS);
         ORB_read(t2);
 
-        print_time("Time(poisson_fit)", t1, t2);
+        print_time(timing_file, "Time(poisson_fit)", t1, t2);
         outfile << "poisson_fit " << xmin << " " << lambda << " " << KS << endl;
     }
     if(req_methods["binomial_fit"] == true){
@@ -367,7 +383,7 @@ void run_all_methods(Graph::Graph *g, ofstream &outfile, ofstream &timing_file, 
         gp.binomial_fit(g, xmin, prob, KS);
         ORB_read(t2);
 
-        print_time("Time(binomial_fit)", t1, t2);
+        print_time(timing_file, "Time(binomial_fit)", t1, t2);
         outfile << "binomial_fit " << xmin << " " << prob << " " << KS << endl;
     }
     #else
