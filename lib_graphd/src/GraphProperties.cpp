@@ -1028,7 +1028,7 @@ namespace Graph {
 
     #ifdef HAS_BOOST
     /**
-     * Fits the degree distribution of g to a power law distribution
+     * Fits the degree distribution of g to a discrete power law distribution
      * \param[in] g Pointer to a graph
      * \param[out] xmin Integer value holding the degree at which the data begins behaving like a power law
      * \param[out] alpha Double holding the most likely value for the exponent
@@ -1037,7 +1037,7 @@ namespace Graph {
      * \param[in] inc Determines granularity of the exponent search range, defaults to 0.01
      * \param[in] end Upper bound for exponent, defaults to 3.5
      */
-    void GraphProperties::powerlaw(Graph *g, int &xmin, double &alpha, double &KS, double start, double inc, double end){
+    void GraphProperties::dpowerlaw_fit(Graph *g, int &xmin, double &alpha, double &KS, double start, double inc, double end){
         int xm, i, k, n, I;
         int prev, pprev;
         int size = 1 + (int)(end - start) / inc;
@@ -1147,7 +1147,223 @@ namespace Graph {
 
             prev = x[xm];
         }
-    } // powerlaw
+    } // dpowerlaw_fit
+
+    /**
+     * Fits the degree distribution of g to a continuous power law distribution
+     * \param[in] g Pointer to a graph
+     * \param[out] xmin Integer value holding the degree at which the data begins following a Poisson distribution
+     * \param[out] alpha Double holding the most likely value for the defining parameter
+     * \param[out] KS Double holding the Kolmogorov-Smirnov statistic
+     */
+    void GraphProperties::cpowerlaw_fit(Graph *g, int &xmin, double &alpha, double &KS ){
+        int xm, i, k, m;
+        int prev, pprev; //xmin
+        double sum, MLE;
+        double f, fn, D, tD; //KS;
+
+        vector<int> x(g->degree);
+
+        sort(x.begin(), x.end());
+
+        KS = -1;
+        prev = 0;
+        for( xm = 0; xm < x.size(); xm++ ){
+            if(x[xm] == prev){
+                continue;
+            }
+
+            m = x.size() - xm;
+
+            sum = 0;
+            for(i = xm; i < x.size(); i++){
+                sum += log(double(x[i]) / x[xm]);
+            }
+            MLE = 1.0 + m / sum;
+
+            pprev = 0;
+            fn = f = 0;
+            D = 0;
+            for(i = xm; i < x.size(); i++){
+                if(x[i] == pprev){
+                    continue;
+                }
+
+                //CDF (f) and EDF (fn)
+                for(k = i; k < x.size() && x[k] <= x[i]; k++){
+                    fn += (1.0) / m;
+                }
+                //CDF = 1 - (xmin/x)^{\alpha - 1}
+                f = 1.0 - pow(x[xm] / double(x[i]), MLE - 1.0);
+
+                tD = abs(fn - f);
+                if(tD > D){
+                    D = tD;
+                }
+
+                pprev = x[i];
+            }
+
+            if(KS > -1){
+                if(D < KS){
+                    KS = D;
+                    xmin = x[xm];
+                    alpha = MLE;
+                }
+            }
+            else {
+                KS = D;
+                xmin = x[xm];
+                alpha = MLE;
+            }
+
+            prev = x[xm];
+        }
+    } // cpowerlaw_fit
+
+    /**
+     * Fits the degree distribution of g to a Poisson distribution
+     * \param[in] g Pointer to a graph
+     * \param[out] xmin Integer value holding the degree at which the data begins following a Poisson distribution
+     * \param[out] lambda Double holding the most likely value for the defining parameter
+     * \param[out] KS Double holding the Kolmogorov-Smirnov statistic
+     */
+    void GraphProperties::poisson_fit(Graph *g, int &xmin, double &lambda, double &KS ){
+        int xm, i, k, m;
+        int prev, pprev, sum; //xmin
+        double MLE;
+        double f, fn, D, tD; //KS;
+
+        vector<int> x(g->degree);
+
+        sort(x.begin(), x.end());
+
+        KS = -1;
+        prev = 0;
+        for( xm = 0; xm < x.size(); xm++ ){
+            if(x[xm] == prev){
+                continue;
+            }
+
+            m = x.size() - xm;
+
+            sum = 0;
+            for(i = xm; i < x.size(); i++){
+                sum += x[i];
+            }
+            MLE = (1.0 / m) * sum;
+
+            pprev = 0;
+            fn = f = 0;
+            D = 0;
+            for(i = xm; i < x.size(); i++){
+                if(x[i] == pprev){
+                    continue;
+                }
+
+                //CDF (f) and EDF (fn)
+                for(k = i; k < x.size() && x[k] <= x[i]; k++){
+                    fn += (1.0) / m;
+                }
+                //\lambda^x[i] * e^{-\lambda}/x[i]!
+                f += (pow(MLE, x[i]) * exp(-MLE)) / boost::math::factorial<double>(x[i]);
+
+                tD = abs(fn - f);
+                if(tD > D){
+                    D = tD;
+                }
+
+                pprev = x[i];
+            }
+
+            if(KS > -1){
+                if(D < KS){
+                    KS = D;
+                    xmin = x[xm];
+                    lambda = MLE;
+                }
+            }
+            else {
+                KS = D;
+                xmin = x[xm];
+                lambda = MLE;
+            }
+
+            prev = x[xm];
+        }
+    } // poisson_fit
+
+    /**
+     * Fits the degree distribution of g to a binomial distribution
+     * \param[in] g Pointer to a graph
+     * \param[out] xmin Integer value holding the degree at which the data begins following a binomial distribution
+     * \param[out] prob Double holding the most likely value for the success probability
+     * \param[out] KS Double holding the Kolmogorov-Smirnov statistic
+     */
+    void GraphProperties::binomial_fit(Graph *g, int &xmin, double &prob, double &KS ){
+        int xm, i, k, m;
+        int prev, pprev, sum, nodes = g->num_nodes; //xmin
+        double MLE;
+        double f, fn, D, tD; //KS;
+
+        vector<int> x(g->degree);
+
+        sort(x.begin(), x.end());
+
+        KS = -1;
+        prev = 0;
+        for( xm = 0; xm < x.size(); xm++ ){
+            if(x[xm] == prev){
+                continue;
+            }
+
+            m = x.size() - xm;
+
+            sum = 0;
+            for(i = xm; i < x.size(); i++){
+                sum += x[i];
+            }
+            MLE = (1.0 / (m * (nodes - 1))) * sum;
+
+            pprev = 0;
+            fn = f = 0;
+            D = 0;
+            for(i = xm; i < x.size(); i++){
+                if(x[i] == pprev){
+                    continue;
+                }
+
+                //CDF (f) and EDF (fn)
+                for(k = i; k < x.size() && x[k] <= x[i]; k++){
+                    fn += (1.0) / m;
+                }
+                //{n-1 \choose x[i]}p^x[i](1-p)^{n-1-x[i]}
+                f += boost::math::binomial_coefficient<double>(nodes - 1, x[i]) * pow(MLE, x[i]) * pow(1 - MLE, nodes - 1 - x[i]);
+
+                tD = abs(fn - f);
+                if(tD > D){
+                    D = tD;
+                }
+
+                pprev = x[i];
+            }
+
+            if(KS > -1){
+                if(D < KS){
+                    KS = D;
+                    xmin = x[xm];
+                    prob = MLE;
+                }
+            }
+            else {
+                KS = D;
+                xmin = x[xm];
+                prob = MLE;
+            }
+
+            prev = x[xm];
+        }
+    } // binomial_fit
 
     #endif // ifdef HAS_BOOST
 
@@ -1208,45 +1424,16 @@ namespace Graph {
             delta.push_back(delta_vec);
             return;
         }
-
+        
         if(!is_connected(g)){
-            cerr << "Graph passed to calc_gromov has multiple components\n";
-
-            //Find the largest connected component
-            int temp = 0;
-            size = 0;
-            for(int i = 0; i < mat_size; i++){
-                temp = 0;
-                for(int j = 0; j < mat_size; j++){
-                    if(dist_mat[i][j] != INDDGO_INFINITY){
-                        temp++;
-                    }
-                }
-                //temp++; //count the vertex currently being tested
-                if(temp > size){
-                    size = temp;
-                    row = i;
-                }
-            }
+            cerr << "Graph passed to delta_hyperbolicity has multiple components, returning zero\n";
+            vector<double> delta_vec(1, 0);
+            delta.push_back(delta_vec);
+            return;
         }
 
-        //build vertex set of largest connected component and find its diameter
-        int temp_diam = 0;
-        vector<int> vert_vec(size);
-        for(int j = 0; j < mat_size; j++){
-            if(dist_mat[row][j] != INDDGO_INFINITY){
-                vert_vec[counter] = j;
-                counter++;
-                if(dist_mat[row][j] > temp_diam){
-                    temp_diam = dist_mat[row][j];
-                }
-            }
-            else if(j == row){
-                vert_vec[counter] = j;
-                counter++;
-            }
-        }
-        diam = temp_diam;
+        size = g->num_nodes;
+        diameter(g, diam);
 
         max_delta = 0;
 
@@ -1301,7 +1488,7 @@ namespace Graph {
         //OMP parallel region, this current implementation generates tasks at two of the four levels of the nested for loop,
         //    these tasks are then passed to threads which execute them and update their private copy of the results array
         //After the tasks have all been generated and executed the results are collated
-        #pragma omp parallel shared(delta, max_delta, shared_max_delta, diam, shared_delta, dist_mat, vert_vec, size)
+        #pragma omp parallel shared(delta, max_delta, shared_max_delta, diam, shared_delta, dist_mat, size)
         {
             double max_delta_loc = 0;
 
@@ -1337,9 +1524,9 @@ namespace Graph {
 
                 for(int i = 0; i < size; ++i){
                     #if defined (TASK_PROFILE) || defined (TASK_PROFILE_OVERHEAD)
-                    #pragma omp task shared(shared_delta, shared_max_delta, dist_mat, vert_vec, size, num_tasks1, num_tasks2, task_time)
+                    #pragma omp task shared(shared_delta, shared_max_delta, dist_mat, size, num_tasks1, num_tasks2, task_time)
                     #else
-                    #pragma omp task shared(shared_delta, shared_max_delta, dist_mat, vert_vec, size)
+                    #pragma omp task shared(shared_delta, shared_max_delta, dist_mat, size)
                     #endif
                     {
                         #ifdef TASK_PROFILE
@@ -1352,9 +1539,9 @@ namespace Graph {
 
                         for(int j = i + 1; j < size; ++j){
                             #if defined (TASK_PROFILE) || defined (TASK_PROFILE_OVERHEAD)
-                            #pragma omp task shared(shared_delta, shared_max_delta, dist_mat, vert_vec, size, num_tasks1, num_tasks2, task_time)
+                            #pragma omp task shared(shared_delta, shared_max_delta, dist_mat, size, num_tasks1, num_tasks2, task_time)
                             #else
-                            #pragma omp task shared(shared_delta, shared_max_delta, dist_mat, vert_vec, size)
+                            #pragma omp task shared(shared_delta, shared_max_delta, dist_mat, size)
                             #endif
                             {
                                 int thread_num = omp_get_thread_num();
@@ -1372,19 +1559,14 @@ namespace Graph {
 
                                 for(int k = j + 1; k < size; ++k){
                                     for(int l = k + 1; l < size; ++l){
-                                        const int ui = vert_vec[i];
+                                        const int uv = (dist_mat)[i][j];
 
-                                        const int vi = vert_vec[j];
-                                        const int uv = (dist_mat)[ui][vi];
+                                        const int ux = (dist_mat)[i][k];
+                                        const int vx = (dist_mat)[j][k];
 
-                                        const int xi = vert_vec[k];
-                                        const int ux = (dist_mat)[ui][xi];
-                                        const int vx = (dist_mat)[vi][xi];
-
-                                        const int yi = vert_vec[l];
-                                        const int uy = (dist_mat)[ui][yi];
-                                        const int vy = (dist_mat)[vi][yi];
-                                        const int xy = (dist_mat)[xi][yi];
+                                        const int uy = (dist_mat)[i][l];
+                                        const int vy = (dist_mat)[j][l];
+                                        const int xy = (dist_mat)[k][l];
 
                                         const int s1 = uv + xy;
                                         const int s2 = ux + vy;
@@ -1452,8 +1634,8 @@ namespace Graph {
                         }
 
                         #ifdef TASK_PROFILE_OVERHEAD
-                        //double tt2 = omp_get_wtime();
-                        //task_time[thread_id][0]+= (tt2 - tt1);
+                        double tt2 = omp_get_wtime();
+                        task_time[thread_id][0]+= (tt2 - tt1);
                         #endif
                         #ifdef TASK_PROFILE
                         int thread_id_end = omp_get_thread_num();
