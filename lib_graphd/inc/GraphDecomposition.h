@@ -36,6 +36,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <string.h>
 #include <time.h>
 #include <assert.h>
@@ -52,6 +53,8 @@
     #define GTEST_HAS_TR1_TUPLE 0
   #endif
   #include <boost/math/special_functions/zeta.hpp>
+  #include <boost/math/special_functions/binomial.hpp>
+  #include <boost/math/special_functions/factorials.hpp>
 #endif
 
 #ifndef HAS_BOOST

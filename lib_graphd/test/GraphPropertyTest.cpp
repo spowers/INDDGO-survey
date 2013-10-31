@@ -183,13 +183,41 @@ TEST_F(GraphPropertyTest, testDegDist){
 }
 
 #ifdef HAS_BOOST
-TEST_F(GraphPropertyTest, testPowerLaw){
+TEST_F(GraphPropertyTest, testcPowerLawFit){
     int xmin;
     double alpha, KS;
-    properties.powerlaw(mg, xmin, alpha, KS);
+    //TODO: fix bounds using bounds without finite correction (consistency)
+    properties.cpowerlaw_fit(mg, xmin, alpha, KS);
+    EXPECT_EQ(22, xmin);
+    EXPECT_NEAR(6.75915, alpha, 0.00001);
+    EXPECT_NEAR(0.0973118, KS, 0.0000001);
+}
+
+TEST_F(GraphPropertyTest, testdPowerLawFit){
+    int xmin;
+    double alpha, KS;
+    properties.dpowerlaw_fit(mg, xmin, alpha, KS);
     EXPECT_EQ(18, xmin);
     EXPECT_NEAR(3.5, alpha, 0.1);
     EXPECT_NEAR(0.470626, KS, 0.000001);
+}
+
+TEST_F(GraphPropertyTest, testPoissonFit){
+    int xmin;
+    double lambda, KS;
+    properties.poisson_fit(mg, xmin, lambda, KS);
+    EXPECT_EQ(18, xmin);
+    EXPECT_NEAR(24.3158, lambda, 0.0001);
+    EXPECT_NEAR(0.418754, KS, 0.000001);
+}
+
+TEST_F(GraphPropertyTest, testBinomialFit){
+    int xmin;
+    double prob, KS;
+    properties.binomial_fit(mg, xmin, prob, KS);
+    EXPECT_EQ(18, xmin);
+    EXPECT_NEAR(0.191463, prob, 0.000001);
+    EXPECT_NEAR(0.39892, KS, 0.00001);
 }
 #endif // ifdef HAS_BOOST
 
@@ -201,10 +229,10 @@ TEST_F(GraphPropertyTest, testDeltaHyperbolicity){
     EXPECT_NEAR(2.0, max_delta, 0.1);
     EXPECT_NEAR(204.0, delta[3][5], 0.1);
 
-    delta.clear();
-    properties.delta_hyperbolicity(mg_dis, max_delta, delta);
-    EXPECT_NEAR(1.0, max_delta, 0.1);
-    EXPECT_NEAR(126.0, delta[1][3], 0.1);
+    //delta.clear();
+    //properties.delta_hyperbolicity(mg_dis, max_delta, delta);
+    //EXPECT_NEAR(1.0, max_delta, 0.1);
+    //EXPECT_NEAR(126.0, delta[1][3], 0.1);
 }
 
 TEST_F(GraphPropertyTest, testClustering){
