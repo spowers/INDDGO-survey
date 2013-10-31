@@ -154,6 +154,9 @@ public:
     int get_num_nodes() const;
     int get_num_connected_components() const;
     vector<int> get_xadj() const;
+    #ifdef HAS_BOOST
+    BoostUndirected *get_boost_graph();
+    #endif //HAS_BOOST
 
     /** \brief get a const ref to the betweenness vector **/
     const vector<double> &get_betweenness_ref();

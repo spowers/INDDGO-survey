@@ -683,7 +683,7 @@ namespace Graph {
      */
 
     void GraphProperties::betweenness_centrality(Graph *g, vector<double> &bc){
-        BoostUndirected *bg = g->boost_graph;
+        BoostUndirected *bg = g->get_boost_graph();
         bc.resize(g->get_num_nodes());
         //boost::brandes_betweenness_centrality(*bg, get(boost::vertex_centrality, *bg));
         boost::brandes_betweenness_centrality(*bg,

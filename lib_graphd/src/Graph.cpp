@@ -801,4 +801,19 @@ namespace Graph {
 
         return (*(this->apsp_dist))[u];
     }
+
+    #ifdef HAS_BOOST
+    /** 
+     * Returns the boost representation of the graph.
+     * Creates it if necessary
+     **/
+    BoostUndirected *Graph::get_boost_graph(){
+        if(this->boost_graph == NULL){
+            GraphUtil util;
+            util.populate_boost(this);
+        }
+        return this->boost_graph;
+    }
+
+    #endif
 }
