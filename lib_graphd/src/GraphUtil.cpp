@@ -561,7 +561,7 @@ namespace Graph {
         for(int node = 0; node < g->num_nodes; node++){
             start = g->xadj[node];
             end = g->xadj[node + 1];
-            size = 1 + end - start;
+            size = end - start;
             row = node;
             PetscScalar ones[size];
             PetscInt columns[size];
