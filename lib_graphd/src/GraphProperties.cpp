@@ -1736,17 +1736,17 @@ namespace Graph {
         MatGetVecs(A, PETSC_NULL, &result1);
         MatGetVecs(A, PETSC_NULL, &result2);
 
-        cout << "Eigen vector is:\n";
-        VecView(eigen_vec,PETSC_VIEWER_STDOUT_SELF);
+        //cout << "Eigen vector is:\n";
+        //VecView(eigen_vec,PETSC_VIEWER_STDOUT_SELF);
         cout << "Eigen value is: " << eigen_val << endl;
 
         MatMult(A,eigen_vec,result1);
         VecSet(xr2,eigen_val);
         VecPointwiseMult(result2,xr2,eigen_vec);
-        cout << "Ax = " << endl;
-        VecView(result1,PETSC_VIEWER_STDOUT_SELF);
-        cout << "yx = " << endl;
-        VecView(result1,PETSC_VIEWER_STDOUT_SELF);
+        //cout << "Ax = " << endl;
+        //VecView(result1,PETSC_VIEWER_STDOUT_SELF);
+        //cout << "yx = " << endl;
+        //VecView(result1,PETSC_VIEWER_STDOUT_SELF);
         PetscScalar *a;
         PetscScalar *b;
         VecGetArray(result1, &a);
@@ -1773,21 +1773,22 @@ namespace Graph {
         #ifndef HAS_SLEPC
         fatal_error("Called SLEPC eigen solvers without HAS_SLEPC.\n");
         #else
+        eigen_values.resize(spread*2);
         GraphUtil graph_util;
         graph_util.populate_PetscMat(g);
         EPS eps;
         PetscInt nconv;
         PetscScalar kr,ki;
         EPSCreate(PETSC_COMM_WORLD, &eps);
-        EPSSetType(eps, EPSPOWER);
+        EPSSetType(eps, EPSKRYLOVSCHUR);
+        EPSSetProblemType(eps, EPS_HEP);
         EPSSetOperators(eps,g->PetscMat,PETSC_NULL);
-        EPSSetLeftVectorsWanted(eps,PETSC_TRUE);
+        EPSSetDimensions(eps, spread, PETSC_DECIDE, PETSC_DECIDE);
         EPSSetFromOptions(eps);
-        EPSSetDimensions(eps,spread * 2,spread * 8,spread * 8);
+        EPSSetWhichEigenpairs(eps, EPS_LARGEST_REAL);
         EPSSolve(eps);
         EPSGetConverged(eps,&nconv);
-        EPSGetConverged(eps,&nconv);
-        eigen_values.resize(nconv);
+        //#define EIGENSOLVER_SELFTEST
         for(int idx = 0; idx < nconv; idx++){
             EPSGetEigenvalue(eps,idx,&kr,&ki);
             eigen_values[idx] = kr;
@@ -1799,6 +1800,22 @@ namespace Graph {
             EPSGetEigenpair(eps,idx,&kr,&ki, xr, xi);
             check_eigen_values(g->PetscMat, xr, kr);
             #endif
+        }
+        EPSSetWhichEigenpairs(eps, EPS_SMALLEST_REAL);
+        EPSSolve(eps);
+        EPSGetConverged(eps,&nconv);
+
+        for(int idx = 0; idx < nconv; idx++){
+          EPSGetEigenvalue(eps,idx,&kr,&ki);
+          eigen_values[(spread*2-1)-idx] = kr;
+          #ifdef EIGENSOLVER_SELFTEST
+          //built in self tester. Don't use in production runs.
+          Vec xr, xi;
+          MatGetVecs(g->PetscMat, PETSC_NULL, &xr);
+          MatGetVecs(g->PetscMat, PETSC_NULL, &xi);
+          EPSGetEigenpair(eps,idx,&kr,&ki, xr, xi);
+          check_eigen_values(g->PetscMat, xr, kr);
+          #endif
         }
         EPSDestroy(&eps);
 
