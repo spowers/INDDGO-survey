@@ -65,9 +65,20 @@ void create_map(string list, map<string, bool> &outmap){
 }
 
 void print_usage(char **argv){
-    cerr << "Usage: " << argv[0] << " [-h] -i infile [-t input-type] [-o outfile] [-p output-prefix] [-m methods] [-s eigen spectrum size] [-r] [-x APSP matrix input]" << endl;
-    cerr << "Allowed methods: " << allowed_methods << endl;
-    cerr << "Input type should be one of: edge, adjlist, adjmatrix, dimacs" << endl;
+    cerr << "Usage: " << argv[0] << " [-h] -i infile [-t input-type] [-o outfile] [-p output-prefix] [-m methods] [-s eigen spectrum size] [-r] [-x APSP matrix input] [-y LCC APSP matrix input]" << endl << endl;
+    cerr << "Allowed methods: " << allowed_methods << endl << endl;
+    ;
+    cerr << "Input type should be one of: edge, adjlist, adjmatrix, dimacs" << endl << endl;
+    cerr << "  -h           help\n";
+    cerr << "  -i infile    input file\n";
+    cerr << "  -t type      input type from previous list\n";
+    cerr << "  -o outfile   output file for statistics\n";
+    cerr << "  -p prefix    out prefix for ALL output files\n";
+    cerr << "  -m methods   list of methods to run on the input graph\n";
+    cerr << "  -s size      number of lowest and highest eigenvalues to calculate (i.e. you get SIZE highest and SIZE lowest values\n";
+    cerr << "  -r           record timings for methods\n";
+    cerr << "  -x matrix    path to file containing APSP matrix for the given graph\n";
+    cerr << "  -y matrix    path to file containing APSP matrix for largest component of the given graph" << endl;
 }
 
 /**
@@ -80,9 +91,9 @@ void print_usage(char **argv){
  * \param[out] methods list of methods we want to run.  Valid values currently: edge_density,avg_degree,degree_dist,global_cc, avg_cc, local_ccs
  */
 
-int parse_options(int argc, char **argv, string& infile, string& intype, string& outfilename, string &outprefix, std::map<string, bool>& methods, bool& record_timings, bool &file_append, int *spectrum_spread, string &apsp_input){
+int parse_options(int argc, char **argv, string& infile, string& intype, string& outfilename, string &outprefix, std::map<string, bool>& methods, bool& record_timings, bool &file_append, int *spectrum_spread, string &apsp_input, string &lcc_apsp_input){
     int flags, opt;
-    while((opt = getopt(argc, argv, "hi:t:o:m:p:s:rax:")) != -1){
+    while((opt = getopt(argc, argv, "hi:t:o:m:p:s:rax:y:")) != -1){
         switch(opt){
         case 'h':
             print_usage(argv);
@@ -113,6 +124,9 @@ int parse_options(int argc, char **argv, string& infile, string& intype, string&
             break;
         case 'x':
             apsp_input = optarg;
+            break;
+        case 'y':
+            lcc_apsp_input = optarg;
             break;
         }
     }
@@ -430,6 +444,7 @@ int main(int argc, char **argv){
     string outfilename;
     string outprefix;
     string apspinputfilename;
+    string lcc_apspinputfilename;
     ofstream outfile;
     ofstream timing_file;
     bool record_timings = false;
@@ -440,7 +455,7 @@ int main(int argc, char **argv){
     ORB_t t1, t2;
     int spectrum_spread = 0;
     create_map(allowed_methods, val_methods);
-    parse_options(argc, argv, infile, intype, outfilename, outprefix, req_methods, record_timings, file_append, &spectrum_spread, apspinputfilename);
+    parse_options(argc, argv, infile, intype, outfilename, outprefix, req_methods, record_timings, file_append, &spectrum_spread, apspinputfilename, lcc_apspinputfilename);
     if(outfilename.length() == 0){
         if(outprefix.length() != 0){
             outfilename = outprefix + ".stats";
@@ -585,6 +600,15 @@ int main(int argc, char **argv){
                 exit(1);
             }
             outfile << "timing_file " << of << endl;
+        }
+        if(lcc_apspinputfilename.length() != 0){
+            cout << "Reading LCC APSP matrix from " << lcc_apspinputfilename << endl;
+            vector< vector<int> > *apsp_dists = new vector< vector<int> >;
+            ORB_read(t1);
+            read_apsp_matrix(lcc_apspinputfilename, *apsp_dists);
+            ORB_read(t2);
+            print_time(timing_file, "Time(read_apsp_matrix)", t1, t2);
+            largest_component->set_shortest_path_dist(apsp_dists);
         }
 
         outprefix = outprefix + ".largest_component";
