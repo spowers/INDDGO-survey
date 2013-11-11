@@ -599,7 +599,7 @@ namespace Graph {
         int i, d_i;
         const int n = g->get_num_nodes();
         vector<long int> triangles(n, 0);
-        int total_possible_triangles = 0;
+        uint64_t total_possible_triangles = 0;
 
         all_triangles_compact_forward(g, triangles);
 
@@ -607,7 +607,7 @@ namespace Graph {
         avg_cc = 0;
         local_ccs.resize(n, 0);
 
-        const int num_triangles = std::accumulate(triangles.begin(), triangles.end(), 0);
+        const uint64_t num_triangles = std::accumulate(triangles.begin(), triangles.end(), 0);
 
         // Calculate local CCs and running sum for global cc calc later
         for(i = 0; i < n; i++){
