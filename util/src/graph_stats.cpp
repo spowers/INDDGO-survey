@@ -326,8 +326,11 @@ void run_all_methods(Graph::Graph *g, ofstream &outfile, ofstream &timing_file, 
         ORB_read(t2);
         print_time(timing_file, "Time(eigen spectrum)",t1,t2);
         outfile << "eigen_spectrum ";
-        for(int idx = 0; idx < eigen_spectrum.size(); idx++){
-            outfile << eigen_spectrum[idx];
+        if(eigen_spectrum.size() > 0) {
+          outfile << eigen_spectrum[0];
+        }
+        for(int idx = 1; idx < eigen_spectrum.size(); idx++){
+          outfile << ", " << eigen_spectrum[idx];
         }
         outfile << "\n";
     }
