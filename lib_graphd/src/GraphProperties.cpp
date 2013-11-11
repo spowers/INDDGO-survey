@@ -1424,7 +1424,7 @@ namespace Graph {
             delta.push_back(delta_vec);
             return;
         }
-        
+
         if(!is_connected(g)){
             cerr << "Graph passed to delta_hyperbolicity has multiple components, returning zero\n";
             vector<double> delta_vec(1, 0);
@@ -1635,7 +1635,7 @@ namespace Graph {
 
                         #ifdef TASK_PROFILE_OVERHEAD
                         double tt2 = omp_get_wtime();
-                        task_time[thread_id][0]+= (tt2 - tt1);
+                        task_time[thread_id][0] += (tt2 - tt1);
                         #endif
                         #ifdef TASK_PROFILE
                         int thread_id_end = omp_get_thread_num();
@@ -1773,7 +1773,7 @@ namespace Graph {
         #ifndef HAS_SLEPC
         fatal_error("Called SLEPC eigen solvers without HAS_SLEPC.\n");
         #else
-        eigen_values.resize(spread*2);
+        eigen_values.resize(spread * 2);
         GraphUtil graph_util;
         graph_util.populate_PetscMat(g);
         EPS eps;
@@ -1806,16 +1806,16 @@ namespace Graph {
         EPSGetConverged(eps,&nconv);
 
         for(int idx = 0; idx < nconv; idx++){
-          EPSGetEigenvalue(eps,idx,&kr,&ki);
-          eigen_values[(spread*2-1)-idx] = kr;
-          #ifdef EIGENSOLVER_SELFTEST
-          //built in self tester. Don't use in production runs.
-          Vec xr, xi;
-          MatGetVecs(g->PetscMat, PETSC_NULL, &xr);
-          MatGetVecs(g->PetscMat, PETSC_NULL, &xi);
-          EPSGetEigenpair(eps,idx,&kr,&ki, xr, xi);
-          check_eigen_values(g->PetscMat, xr, kr);
-          #endif
+            EPSGetEigenvalue(eps,idx,&kr,&ki);
+            eigen_values[(spread * 2 - 1) - idx] = kr;
+            #ifdef EIGENSOLVER_SELFTEST
+            //built in self tester. Don't use in production runs.
+            Vec xr, xi;
+            MatGetVecs(g->PetscMat, PETSC_NULL, &xr);
+            MatGetVecs(g->PetscMat, PETSC_NULL, &xi);
+            EPSGetEigenpair(eps,idx,&kr,&ki, xr, xi);
+            check_eigen_values(g->PetscMat, xr, kr);
+            #endif
         }
         EPSDestroy(&eps);
 

@@ -61,7 +61,6 @@
   #include <stdint.h>
 #endif
 
-
 #include <set>
 #include <map>
 #include <limits.h>

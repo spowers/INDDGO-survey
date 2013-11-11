@@ -326,11 +326,11 @@ void run_all_methods(Graph::Graph *g, ofstream &outfile, ofstream &timing_file, 
         ORB_read(t2);
         print_time(timing_file, "Time(eigen spectrum)",t1,t2);
         outfile << "eigen_spectrum ";
-        if(eigen_spectrum.size() > 0) {
-          outfile << eigen_spectrum[0];
+        if(eigen_spectrum.size() > 0){
+            outfile << eigen_spectrum[0];
         }
         for(int idx = 1; idx < eigen_spectrum.size(); idx++){
-          outfile << ", " << eigen_spectrum[idx];
+            outfile << ", " << eigen_spectrum[idx];
         }
         outfile << "\n";
     }
@@ -373,7 +373,7 @@ void run_all_methods(Graph::Graph *g, ofstream &outfile, ofstream &timing_file, 
         print_time(timing_file, "Time(binomial_fit)", t1, t2);
         outfile << "binomial_fit " << xmin << " " << prob << " " << KS << endl;
     }
-    #else
+    #else // ifdef HAS_BOOST
     cerr << "Error: BOOST support was not compiled, cannot run shortest_paths_boost or betweenness" << endl;
     #endif //HAS_BOOST
     if(num_components == 1){

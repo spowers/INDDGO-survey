@@ -803,7 +803,7 @@ namespace Graph {
     }
 
     #ifdef HAS_BOOST
-    /** 
+    /**
      * Returns the boost representation of the graph.
      * Creates it if necessary
      **/
