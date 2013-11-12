@@ -65,11 +65,12 @@ void create_map(string list, map<string, bool> &outmap){
 }
 
 void print_usage(char **argv){
-    cerr << "Usage: " << argv[0] << " [-h] -i infile [-t input-type] [-o outfile] [-p output-prefix] [-m methods] [-s eigen spectrum size] [-r] [-x APSP matrix input] [-y LCC APSP matrix input]" << endl << endl;
+    cerr << "Usage: " << argv[0] << " [-h] [-a] -i infile [-t input-type] [-o outfile] [-p output-prefix] [-m methods] [-s eigen spectrum size] [-r] [-x APSP matrix input] [-y LCC APSP matrix input]" << endl << endl;
     cerr << "Allowed methods: " << allowed_methods << endl << endl;
     ;
     cerr << "Input type should be one of: edge, adjlist, adjmatrix, dimacs" << endl << endl;
     cerr << "  -h           help\n";
+    cerr << "  -a           append to .stats files instead of overwriting\n";
     cerr << "  -i infile    input file\n";
     cerr << "  -t type      input type from previous list\n";
     cerr << "  -o outfile   output file for statistics\n";
