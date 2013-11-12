@@ -164,7 +164,9 @@ void run_all_methods(Graph::Graph *g, ofstream &outfile, ofstream &timing_file, 
     ORB_read(t2);
     print_time(timing_file, "Time(make_simple)", t1, t2);
     int num_components = g->get_num_connected_components();
-    outfile << "connected_components " << num_components << endl;
+    if(false == file_append){
+        outfile << "connected_components " << num_components << endl;
+    }
 
     if(req_methods["edge_density"] == true){
         cout << "Calculating edge density" << endl;
@@ -534,7 +536,9 @@ int main(int argc, char **argv){
             cerr << "Error opening " << timing_file << " for writing, exiting" << endl;
             exit(1);
         }
-        outfile << "timing_file " << of << endl;
+        if(false == file_append){
+            outfile << "timing_file " << of << endl;
+        }
     }
 
     print_time(timing_file, "Time(read_graph)", t1, t2);
