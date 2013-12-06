@@ -166,6 +166,8 @@ void run_all_methods(Graph::Graph *g, ofstream &outfile, ofstream &timing_file, 
     int num_components = g->get_num_connected_components();
     if(false == file_append){
         outfile << "connected_components " << num_components << endl;
+        outfile << "net_num_nodes " << g->get_num_nodes() << endl;
+        outfile << "net_num_edges " << g->get_num_edges() << endl;
     }
 
     if(req_methods["edge_density"] == true){
@@ -520,8 +522,8 @@ int main(int argc, char **argv){
 
     if(outfile.tellp() == 0){
         outfile << "filename " << infile << endl;
-        outfile << "num_nodes " << g->get_num_nodes() << endl;
-        outfile << "num_edges " << g->get_num_edges() << endl;
+        outfile << "input_num_nodes " << g->get_num_nodes() << endl;
+        outfile << "input_num_edges " << g->get_num_edges() << endl;
     }
 
     if(record_timings){
@@ -556,12 +558,12 @@ int main(int argc, char **argv){
     outfile.precision(16);
     vector<int> components;
     ORB_read(t1);
-    cout << "GU.label_all_components says: " << gu.label_all_components(g, &components) << endl;
+    //cout << "GU.label_all_components says: " << gu.label_all_components(g, &components) << endl;
     ORB_read(t2);
     print_time(timing_file, "Time(label_all_components)", t1, t2);
     bool is_connected = gp.is_connected(g);
     cout << "Connected components: " << g->get_num_connected_components() << endl;
-    cout << "Graph is connected: " << std::boolalpha << is_connected << endl;
+    //cout << "Graph is connected: " << std::boolalpha << is_connected << endl;
 
     run_all_methods(g, outfile, timing_file, outprefix, req_methods, file_append, spectrum_spread);
     outfile.close();
@@ -588,8 +590,8 @@ int main(int argc, char **argv){
 
         if(outfile.tellp() == 0){
             outfile << "largest_component_from " << infile << endl;
-            outfile << "num_nodes " << largest_component->get_num_nodes() << endl;
-            outfile << "num_edges " << largest_component->get_num_edges() << endl;
+            outfile << "input_num_nodes " << largest_component->get_num_nodes() << endl;
+            outfile << "input_num_edges " << largest_component->get_num_edges() << endl;
         }
         if(record_timings){
             string of = outfilename + ".timings";
