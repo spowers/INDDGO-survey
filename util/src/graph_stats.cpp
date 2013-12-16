@@ -32,6 +32,11 @@
 #include "Util.h"
 #include "GraphException.h"
 
+#ifdef MPI_VERSION
+#include <mpi.h>
+#warning building with science!
+#endif
+
 #if !WIN32 && !CYGWIN
   #include "orbconfig.h"
   #include "orbtimer.h"
@@ -344,6 +349,12 @@ void run_all_methods(Graph::Graph *g, ofstream &outfile, ofstream &timing_file, 
         gp.eigen_spectrum(g, eigen_spectrum, spectrum_spread);
         ORB_read(t2);
         print_time(timing_file, "Time(eigen spectrum)",t1,t2);
+
+#ifdef MPI_VERSION
+        int myrank;
+        MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
+        if(myrank == 0) {
+#endif
         outfile << "eigen_spectrum ";
         if(eigen_spectrum.size() > 0){
             outfile << eigen_spectrum[0];
@@ -352,6 +363,9 @@ void run_all_methods(Graph::Graph *g, ofstream &outfile, ofstream &timing_file, 
             outfile << ", " << eigen_spectrum[idx];
         }
         outfile << "\n";
+#ifdef MPI_VERSION
+        }
+#endif
     }
     #endif // ifdef HAS_PETSC
 
@@ -500,6 +514,13 @@ int main(int argc, char **argv){
     Graph::GraphProperties gp;
     Graph::GraphUtil gu;
 
+#ifdef MPI_VERSION
+    MPI_Init(&argc, &argv);
+    int myrank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
+    if(myrank==0) {
+#endif
+
     // Set up output streams
     if(file_append == false){
         outfile.open(outfilename.c_str());
@@ -511,6 +532,10 @@ int main(int argc, char **argv){
         cerr << "Error opening " << outfilename << " for writing, exiting" << endl;
         exit(1);
     }
+
+#ifdef MPI_VERSION
+    }
+#endif
 
     // Read in the graph and start recording things to output streams
     cout << "Reading graph" << endl;
@@ -625,6 +650,10 @@ int main(int argc, char **argv){
         outfile.close();
         timing_file.close();
     }
+
+#ifdef MPI_VERSION
+    MPI_Finalize();
+#endif
 
     exit(0);
 } // main
