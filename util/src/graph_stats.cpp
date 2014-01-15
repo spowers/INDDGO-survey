@@ -528,6 +528,10 @@ int main(int argc, char **argv){
 
     if(record_timings){
         string of = outfilename + ".timings";
+
+#ifdef MPI_VERSION
+        if(0 == myrank){
+#endif
         if(file_append == false){
             timing_file.open(of.c_str());
         }
@@ -541,7 +545,12 @@ int main(int argc, char **argv){
         if(false == file_append){
             outfile << "timing_file " << of << endl;
         }
+#ifdef MPI_VERSION
+        }
+#endif
     }
+
+        
 
     print_time(timing_file, "Time(read_graph)", t1, t2);
 
