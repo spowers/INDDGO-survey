@@ -567,7 +567,7 @@ int main(int argc, char **argv){
     outfile.precision(16);
     vector<int> components;
     ORB_read(t1);
-    //cout << "GU.label_all_components says: " << gu.label_all_components(g, &components) << endl;
+    gu.label_all_components(g, &components);
     ORB_read(t2);
     print_time(timing_file, "Time(label_all_components)", t1, t2);
     bool is_connected = gp.is_connected(g);
