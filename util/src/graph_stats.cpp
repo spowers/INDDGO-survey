@@ -598,14 +598,28 @@ int main(int argc, char **argv){
         delete(g);  // delete g here to save on memory
 
         if(outfile.tellp() == 0){
+#ifdef MPI_VERSION
+            if(0 == myrank){
+#endif
             outfile << "largest_component_from " << infile << endl;
             outfile << "input_num_nodes " << largest_component->get_num_nodes() << endl;
             outfile << "input_num_edges " << largest_component->get_num_edges() << endl;
+#ifdef MPI_VERSION
+            }
+#endif
         }
         if(record_timings){
             string of = outfilename + ".timings";
             if(file_append == false){
                 timing_file.open(of.c_str());
+#ifdef MPI_VERSION
+                if(0 == myrank){
+#endif
+                outfile << "timing_file " << of << endl;
+#ifdef MPI_VERSION
+                }
+#endif
+
             }
             else {
                 timing_file.open(of.c_str(), ios_base::out | ios_base::app);
@@ -615,7 +629,6 @@ int main(int argc, char **argv){
                 cerr << "Error opening " << timing_file << " for writing, exiting" << endl;
                 exit(1);
             }
-            outfile << "timing_file " << of << endl;
         }
         if(lcc_apspinputfilename.length() != 0){
             cout << "Reading LCC APSP matrix from " << lcc_apspinputfilename << endl;
