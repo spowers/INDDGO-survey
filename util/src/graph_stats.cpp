@@ -48,10 +48,18 @@
 using namespace std;
 
 void print_time(ofstream &of, string prefix, ORB_t start, ORB_t end){
+#ifdef MPI_VERSION
+    int myrank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
+    if(myrank == 0) {
+#endif
     cout << prefix + ": " << ORB_seconds(end, start) << endl;
     if(of.is_open()){
         of << prefix + ": " << ORB_seconds(end, start) << endl;
     }
+#ifdef MPI_VERSION
+    }
+#endif
 }
 
 const string allowed_methods ("edge_density,avg_degree,degree_dist,global_cc,avg_cc,local_ccs,shortest_paths,assortativity,eccentricity,eccentricity_dist,expansion,apsp_output,avg_shortest_path,shortest_paths_boost,eigen_spectrum,k_cores,degeneracy,betweenness,delta_hyperbolicity,diameter,effective_diameter");
@@ -449,7 +457,12 @@ int main(int argc, char **argv){
 
     // we'd like higher precision when printing values
     std::cout.precision(10);
-
+#ifdef MPI_VERSION
+    MPI_Init(&argc, &argv);
+    int myrank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
+    if(myrank == 0) {
+#endif
     cout << "done parsing options" << endl;
     cout << "Input  file: " << infile << endl;
     cout << "Input  type: " << intype << endl;
@@ -465,6 +478,9 @@ int main(int argc, char **argv){
     }
     cout << endl;
     cout << "Calibrating timers" << endl;
+#ifdef MPI_VERSION
+    }
+#endif
     ORB_calibrate();
 
     // let's do some calculations
@@ -475,9 +491,8 @@ int main(int argc, char **argv){
     Graph::GraphUtil gu;
 
 #ifdef MPI_VERSION
-    MPI_Init(&argc, &argv);
-    int myrank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
+    //int myrank;
+    //MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
     if(myrank==0) {
 #endif
 
