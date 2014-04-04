@@ -607,7 +607,7 @@ namespace Graph {
         avg_cc = 0;
         local_ccs.resize(n, 0);
 
-        const uint64_t num_triangles = std::accumulate(triangles.begin(), triangles.end(), 0);
+        const uint64_t num_triangles = std::accumulate(triangles.begin(), triangles.end(), (uint64_t)0 );
 
         // Calculate local CCs and running sum for global cc calc later
         for(i = 0; i < n; i++){
