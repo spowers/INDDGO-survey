@@ -960,6 +960,7 @@ void write_local_ccs(string filename, const vector<double> &local_cc){
 
     outfile.close();
 } // write_k_cores
+
 /**
  * Write an eccentricity list out to file.
  * \param[in] filename filename to write output to

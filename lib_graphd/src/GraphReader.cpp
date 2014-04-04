@@ -240,7 +240,7 @@ namespace Graph {
     } // read_edgelist
 
     int GraphReader::read_binary_edgelist(Graph *g, const string filename){
-        typedef struct{
+        typedef struct {
             long u;
             long v;
         } edge;
@@ -249,28 +249,28 @@ namespace Graph {
         ifstream input (filename.c_str(), ios::in | ios::binary);
         size_t nedges;
         input.read((char *)(&nedges), sizeof(size_t));
-        size_t total=0;
+        size_t total = 0;
         size_t bytes_read = 0;
         int i,j, n;
         long u,v;
         while(total < nedges){
-            input.read((char *)edge_buff, 1024*sizeof(edge));
+            input.read((char *)edge_buff, 1024 * sizeof(edge));
             bytes_read = input.gcount();
             total += bytes_read / sizeof(edge);
             cout << "just read " << bytes_read / sizeof(edge) << " new total is  " << total << "of " << nedges << "edges" << endl;
-            for(i = 0; i< bytes_read/sizeof(edge) ; i++){
+            for(i = 0; i < bytes_read / sizeof(edge); i++){
                 n = g->get_num_nodes();
-                u=edge_buff[i].u;
-                v=edge_buff[i].v;
-                j= max(u,v)+1 -n;
+                u = edge_buff[i].u;
+                v = edge_buff[i].v;
+                j = max(u,v) + 1 - n;
                 g->add_vertices(j);
-                cout << "trying to add edge " << u << "<->" << v <<endl;
+                cout << "trying to add edge " << u << "<->" << v << endl;
                 g->add_edge(u,v);
             }
             cout << "graph now has " << g->get_num_edges() << endl;
         }
+    } // read_binary_edgelist
 
-    }
 /**
  * Private function to read in a graph in DIMACS format
  * \param[in,out] g a graph object

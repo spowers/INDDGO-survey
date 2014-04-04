@@ -33,8 +33,8 @@
 #include "GraphException.h"
 
 #ifdef MPI_VERSION
-#include <mpi.h>
-#warning building with science!
+  #include <mpi.h>
+  #warning building with science!
 #endif
 
 #if !WIN32 && !CYGWIN
@@ -48,18 +48,19 @@
 using namespace std;
 
 void print_time(ofstream &of, string prefix, ORB_t start, ORB_t end){
-#ifdef MPI_VERSION
+    #ifdef MPI_VERSION
     int myrank;
     MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
-    if(myrank == 0) {
-#endif
+    if(myrank == 0){
+    #endif
     cout << prefix + ": " << ORB_seconds(end, start) << endl;
     if(of.is_open()){
         of << prefix + ": " << ORB_seconds(end, start) << endl;
     }
-#ifdef MPI_VERSION
-    }
-#endif
+    #ifdef MPI_VERSION
+}
+
+    #endif
 }
 
 const string allowed_methods ("edge_density,avg_degree,degree_dist,global_cc,avg_cc,local_ccs,shortest_paths,assortativity,eccentricity,eccentricity_dist,expansion,apsp_output,avg_shortest_path,shortest_paths_boost,eigen_spectrum,k_cores,degeneracy,betweenness,delta_hyperbolicity,diameter,effective_diameter");
@@ -93,7 +94,7 @@ void print_usage(char **argv){
     cerr << "  -r           record timings for methods\n";
     cerr << "  -x matrix    path to file containing APSP matrix for the given graph\n";
     cerr << "  -y matrix    path to file containing APSP matrix for largest component of the given graph" << endl;
-}
+} // print_usage
 
 /**
  * Parse all of our options
@@ -361,11 +362,11 @@ void run_all_methods(Graph::Graph *g, ofstream &outfile, ofstream &timing_file, 
         ORB_read(t2);
         print_time(timing_file, "Time(eigen spectrum)",t1,t2);
 
-#ifdef MPI_VERSION
+        #ifdef MPI_VERSION
         int myrank;
         MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
-        if(myrank == 0) {
-#endif
+        if(myrank == 0){
+        #endif
         outfile << "eigen_spectrum ";
         if(eigen_spectrum.size() > 0){
             outfile << eigen_spectrum[0];
@@ -374,9 +375,9 @@ void run_all_methods(Graph::Graph *g, ofstream &outfile, ofstream &timing_file, 
             outfile << ", " << eigen_spectrum[idx];
         }
         outfile << "\n";
-#ifdef MPI_VERSION
-        }
-#endif
+        #ifdef MPI_VERSION
+    }
+        #endif
     }
     #endif // ifdef HAS_PETSC
 
@@ -460,12 +461,12 @@ int main(int argc, char **argv){
 
     // we'd like higher precision when printing values
     std::cout.precision(10);
-#ifdef MPI_VERSION
+    #ifdef MPI_VERSION
     MPI_Init(&argc, &argv);
     int myrank;
     MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
-    if(myrank == 0) {
-#endif
+    if(myrank == 0){
+    #endif
     cout << "done parsing options" << endl;
     cout << "Input  file: " << infile << endl;
     cout << "Input  type: " << intype << endl;
@@ -481,9 +482,10 @@ int main(int argc, char **argv){
     }
     cout << endl;
     cout << "Calibrating timers" << endl;
-#ifdef MPI_VERSION
-    }
-#endif
+    #ifdef MPI_VERSION
+} // main
+
+    #endif
     ORB_calibrate();
 
     // let's do some calculations
@@ -493,11 +495,11 @@ int main(int argc, char **argv){
     Graph::GraphProperties gp;
     Graph::GraphUtil gu;
 
-#ifdef MPI_VERSION
+    #ifdef MPI_VERSION
     //int myrank;
     //MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
-    if(myrank==0) {
-#endif
+    if(myrank == 0){
+    #endif
 
     // Set up output streams
     if(file_append == false){
@@ -511,9 +513,9 @@ int main(int argc, char **argv){
         exit(1);
     }
 
-#ifdef MPI_VERSION
-    }
-#endif
+    #ifdef MPI_VERSION
+}
+    #endif
 
     // Read in the graph and start recording things to output streams
     cout << "Reading graph" << endl;
@@ -532,9 +534,9 @@ int main(int argc, char **argv){
     if(record_timings){
         string of = outfilename + ".timings";
 
-#ifdef MPI_VERSION
+        #ifdef MPI_VERSION
         if(0 == myrank){
-#endif
+        #endif
         if(file_append == false){
             timing_file.open(of.c_str());
         }
@@ -548,12 +550,10 @@ int main(int argc, char **argv){
         if(false == file_append){
             outfile << "timing_file " << of << endl;
         }
-#ifdef MPI_VERSION
-        }
-#endif
+        #ifdef MPI_VERSION
     }
-
-        
+        #endif
+    }
 
     print_time(timing_file, "Time(read_graph)", t1, t2);
 
@@ -601,28 +601,27 @@ int main(int argc, char **argv){
         delete(g);  // delete g here to save on memory
 
         if(outfile.tellp() == 0){
-#ifdef MPI_VERSION
+            #ifdef MPI_VERSION
             if(0 == myrank){
-#endif
+            #endif
             outfile << "largest_component_from " << infile << endl;
             outfile << "input_num_nodes " << largest_component->get_num_nodes() << endl;
             outfile << "input_num_edges " << largest_component->get_num_edges() << endl;
-#ifdef MPI_VERSION
-            }
-#endif
+            #ifdef MPI_VERSION
+        }
+            #endif
         }
         if(record_timings){
             string of = outfilename + ".timings";
             if(file_append == false){
                 timing_file.open(of.c_str());
-#ifdef MPI_VERSION
+                #ifdef MPI_VERSION
                 if(0 == myrank){
-#endif
+                #endif
                 outfile << "timing_file " << of << endl;
-#ifdef MPI_VERSION
-                }
-#endif
-
+                #ifdef MPI_VERSION
+            }
+                #endif
             }
             else {
                 timing_file.open(of.c_str(), ios_base::out | ios_base::app);
@@ -651,9 +650,9 @@ int main(int argc, char **argv){
         timing_file.close();
     }
 
-#ifdef MPI_VERSION
+    #ifdef MPI_VERSION
     MPI_Finalize();
-#endif
+    #endif
 
     exit(0);
 } // main

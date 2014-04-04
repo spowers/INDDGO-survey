@@ -1026,7 +1026,6 @@ namespace Graph {
         }
     }
 
-
     /**
      * Calculates the degree assortativity of a graph g
      * \param[in] g input graph
