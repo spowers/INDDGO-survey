@@ -59,6 +59,8 @@ public:
 private:
     /** \brief read an edgelist */
     int read_edgelist(Graph *g, const string filename);
+    /** \brief read a binary edgelist */
+    int read_binary_edgelist(Graph *g, const string filename);
     /** \brief read a DIMACS file */
     int read_dimacs(Graph *g, const string filename, bool read_vertex_weights);
     /** \brief read an adjacency list */
