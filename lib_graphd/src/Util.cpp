@@ -939,6 +939,28 @@ void write_kcores(string filename, const vector<int> &kcores){
 } // write_k_cores
 
 /**
+ * Write a clustering coefficient list out to file.
+ * \param[in] filename filename to write output to
+ * \param[in] local_cc a vector<int>, indexed on vertex number
+ */
+void write_local_ccs(string filename, const vector<double> &local_cc){
+    ofstream outfile;
+
+    outfile.open(filename.c_str());
+
+    if(!outfile.is_open()){
+        cerr << "Error opening " << filename << "for writing\n";
+    }
+    else {
+        int i;
+        for(i = 0; i < local_cc.size(); i++){
+            outfile << i << " " << local_cc[i] << "\n";
+        }
+    }
+
+    outfile.close();
+} // write_k_cores
+/**
  * Write an eccentricity list out to file.
  * \param[in] filename filename to write output to
  * \param[in] ecc a vector<int>, indexed on vertex number

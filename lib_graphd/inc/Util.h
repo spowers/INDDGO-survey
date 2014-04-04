@@ -108,6 +108,11 @@ void write_eccentricity_distribution(string filename, const vector<double> &dist
 void write_kcores(string filename, const vector<int> &kcores);
 
 /**
+ * \brief write a clustering coeffecient list out to a file
+ */
+void write_local_ccs(string filename, const vector<double> &local_cc);
+
+/**
  * \brief write an eccentricity list out to a file
  */
 void write_eccentricity(string filename, const vector<int> &ecc);

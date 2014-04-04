@@ -244,6 +244,9 @@ void run_all_methods(Graph::Graph *g, ofstream &outfile, ofstream &timing_file, 
             outfile << "average_clustering_coefficient " << avg_cc << endl;
         }
         if(req_methods["local_ccs"] == true){
+            string of = outprefix + ".local_ccs";
+            outfile << "local_ccs file " << of << endl;
+            write_local_ccs(of, local_cc);
         }
     }
     if(req_methods["shortest_paths"] == true){
