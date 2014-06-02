@@ -53,6 +53,7 @@ namespace Graph {
     int GraphReader::read_graph(Graph *g, const string filename, string type, bool read_vertex_weights){
         string t = str_to_up(type);
         int retcode = -1;
+        cout << "t is: " << t << endl;
         if("EDGE" == t){
             retcode = GraphReader::read_edgelist(g, filename);
             if(read_vertex_weights){
@@ -61,7 +62,7 @@ namespace Graph {
                 vg->weight.resize(vg->num_nodes, 1);
             }
         }
-        if("BINARYEDGE" == t){
+        else if("BINARYEDGE" == t){
             retcode = GraphReader::read_binary_edgelist(g, filename);
             if(read_vertex_weights){
                 VertexWeightedGraph *vg;
@@ -257,17 +258,14 @@ namespace Graph {
             input.read((char *)edge_buff, 1024 * sizeof(edge));
             bytes_read = input.gcount();
             total += bytes_read / sizeof(edge);
-            cout << "just read " << bytes_read / sizeof(edge) << " new total is  " << total << "of " << nedges << "edges" << endl;
             for(i = 0; i < bytes_read / sizeof(edge); i++){
                 n = g->get_num_nodes();
                 u = edge_buff[i].u;
                 v = edge_buff[i].v;
                 j = max(u,v) + 1 - n;
                 g->add_vertices(j);
-                cout << "trying to add edge " << u << "<->" << v << endl;
                 g->add_edge(u,v);
             }
-            cout << "graph now has " << g->get_num_edges() << endl;
         }
     } // read_binary_edgelist
 
