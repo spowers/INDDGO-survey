@@ -596,7 +596,7 @@ namespace Graph {
      */
 
     void GraphProperties::clustering_coefficients(Graph *g, double &global_cc, double &avg_cc, vector<double> &local_ccs){
-        int i, d_i;
+        int64_t i, d_i;
         const int n = g->get_num_nodes();
         vector<long int> triangles(n, 0);
         uint64_t total_possible_triangles = 0;
