@@ -63,7 +63,7 @@ void print_time(ofstream &of, string prefix, ORB_t start, ORB_t end){
     #endif
 }
 
-const string allowed_methods ("edge_density,avg_degree,degree_dist,global_cc,avg_cc,local_ccs,shortest_paths,assortativity,eccentricity,eccentricity_dist,expansion,apsp_output,avg_shortest_path,shortest_paths_boost,eigen_spectrum,k_cores,degeneracy,betweenness,delta_hyperbolicity,diameter,effective_diameter");
+const string allowed_methods ("edge_density,avg_degree,degree_dist,global_cc,avg_cc,local_ccs,shortest_paths,assortativity,eccentricity,eccentricity_dist,expansion,apsp_output,avg_shortest_path,shortest_paths_boost,eigen_spectrum,k_cores,degeneracy,betweenness,delta_hyperbolicity,diameter,effective_diameter,component_sizes");
 
 /**
  * Creates a map from a comma-separated string
@@ -90,6 +90,7 @@ void print_usage(char **argv){
     cerr << "  -o outfile   output file for statistics\n";
     cerr << "  -p prefix    out prefix for ALL output files\n";
     cerr << "  -m methods   list of methods to run on the input graph\n";
+    cerr << "  -n           do not run calculations on largest component\n";
     cerr << "  -s size      number of lowest and highest eigenvalues to calculate (i.e. you get SIZE highest and SIZE lowest values\n";
     cerr << "  -r           record timings for methods\n";
     cerr << "  -x matrix    path to file containing APSP matrix for the given graph\n";
@@ -106,9 +107,9 @@ void print_usage(char **argv){
  * \param[out] methods list of methods we want to run.  Valid values currently: edge_density,avg_degree,degree_dist,global_cc, avg_cc, local_ccs
  */
 
-int parse_options(int argc, char **argv, string& infile, string& intype, string& outfilename, string &outprefix, std::map<string, bool>& methods, bool& record_timings, bool &file_append, int *spectrum_spread, string &apsp_input, string &lcc_apsp_input){
+int parse_options(int argc, char **argv, string& infile, string& intype, string& outfilename, string &outprefix, std::map<string, bool>& methods, bool& record_timings, bool &file_append, bool& run_largest_cc, int *spectrum_spread, string &apsp_input, string &lcc_apsp_input){
     int flags, opt;
-    while((opt = getopt(argc, argv, "hi:t:o:m:p:s:rax:y:")) != -1){
+    while((opt = getopt(argc, argv, "hi:t:o:m:p:s:ranx:y:")) != -1){
         switch(opt){
         case 'h':
             print_usage(argv);
@@ -130,6 +131,9 @@ int parse_options(int argc, char **argv, string& infile, string& intype, string&
             break;
         case 'r':
             record_timings = true;
+            break;
+        case 'n':
+            run_largest_cc = false;
             break;
         case 's':
             *spectrum_spread = atoi(optarg);
@@ -162,6 +166,7 @@ void run_all_methods(Graph::Graph *g, ofstream &outfile, ofstream &timing_file, 
     vector<int> deg_dist, ecc;
     int degeneracy, diam;
     vector<int> k_cores;
+    vector<list<int> *> components;
     double avg_path_length;
     int xmin;
     double prob, lambda, alpha, KS, max_delta;
@@ -210,6 +215,19 @@ void run_all_methods(Graph::Graph *g, ofstream &outfile, ofstream &timing_file, 
         write_degree_distribution(of, deg_dist);
         outfile << "degree_distribution " <<  of << endl;
     }
+    if(num_components != 1){
+        if(req_methods["component_sizes"] == true){
+            cout << "Calculating component sizes" << endl;
+            ORB_read(t1);
+            gu.find_all_components(g, &components);
+            ORB_read(t2);
+            print_time(timing_file, "Time(component_sizes)", t1, t2);
+            string of = outprefix + ".component_sizes";
+            write_components(of, components);
+            outfile << "component_sizes " << of << endl;
+        }
+    }
+
     if(req_methods["assortativity"] == true){
         cout << "Calculating degree assortativity" << endl;
         ORB_read(t1);
@@ -440,13 +458,14 @@ int main(int argc, char **argv){
     ofstream timing_file;
     bool record_timings = false;
     bool file_append = false;
+    bool run_largest_cc = true;
     string intype ("edge");
     std::map<string, bool> req_methods;
     std::map<string, bool> val_methods;
     ORB_t t1, t2;
     int spectrum_spread = 0;
     create_map(allowed_methods, val_methods);
-    parse_options(argc, argv, infile, intype, outfilename, outprefix, req_methods, record_timings, file_append, &spectrum_spread, apspinputfilename, lcc_apspinputfilename);
+    parse_options(argc, argv, infile, intype, outfilename, outprefix, req_methods, record_timings, file_append, run_largest_cc, &spectrum_spread, apspinputfilename, lcc_apspinputfilename);
     if(outfilename.length() == 0){
         if(outprefix.length() != 0){
             outfilename = outprefix + ".stats";
@@ -582,7 +601,7 @@ int main(int argc, char **argv){
     timing_file.close();
 
     // some algorithms only make sense to run on a connected graph/component
-    if(not is_connected){  // run everything against the other algorithms
+    if(not is_connected and run_largest_cc){  // run everything against the other algorithms
         cout << "Graph is not connected, re-running stats on largest connected component" << endl;
         outfilename = outprefix + ".largest_component.stats";
         if(file_append == false){
@@ -598,8 +617,9 @@ int main(int argc, char **argv){
 
         // get the largest component
         Graph::Graph *largest_component = gu.get_largest_component_graph(g);
+        cerr << "Deleting g" << endl;
         delete(g);  // delete g here to save on memory
-
+        cerr << "g deleted" << endl;
         if(outfile.tellp() == 0){
             #ifdef MPI_VERSION
             if(0 == myrank){
@@ -645,6 +665,7 @@ int main(int argc, char **argv){
         outprefix = outprefix + ".largest_component";
 
         outfile.precision(16);
+        cerr << "Running methods on largest component" << endl;
         run_all_methods(largest_component, outfile, timing_file, outprefix, req_methods, file_append, spectrum_spread);
         outfile.close();
         timing_file.close();

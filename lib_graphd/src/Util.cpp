@@ -1099,3 +1099,27 @@ void read_apsp_matrix(string filename, vector< vector<int> > &apsp){
     fclose(infile);
 } // write_apsp_matrix
 
+/**
+ * Write component sizes to file
+ *
+ * \param[in] filename filename to write output to
+ * \param[in] components vectors
+ */
+void write_components(string filename, const vector<list<int> *> &components){
+    ofstream outfile;
+
+    outfile.open(filename.c_str());
+
+    if(!outfile.is_open()){
+        cerr << "Error opening " << filename << "for writing\n";
+    }
+    else {
+        int i, j;
+        for(i = 0; i < components.size(); i++){
+            outfile << components[i]->size() << endl;
+        }
+    }
+
+    outfile.close();
+} // write_betweenness
+

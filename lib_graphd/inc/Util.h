@@ -141,6 +141,10 @@ void write_apsp_matrix(string filename, vector< vector<int> > &apsp);
  * \brief Reads an all pairs shortest path matrix from file
  */
 void read_apsp_matrix(string filename, vector< vector<int> > &apsp);
+/**
+ * \brief Writes component sizes out to file
+ */
+void write_components(string filename, const vector<list<int> *> &components);
 
 int_int mylog2(int x);
 
