@@ -281,7 +281,7 @@ void run_all_methods(Graph::Graph *g, ofstream &outfile, ofstream &timing_file, 
         ORB_read(t1);
         gp.betweenness_centrality(g, betweenness);
         ORB_read(t2);
-        print_time(timing_file, "Time(betweenness_centrality",t1,t2);
+        print_time(timing_file, "Time(betweenness_centrality)",t1,t2);
         string of = outprefix + ".betweenness";
         outfile << "betweenness_file " << of << endl;
         write_betweenness(of, g->get_betweenness_ref());
